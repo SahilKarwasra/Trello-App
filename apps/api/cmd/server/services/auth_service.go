@@ -54,8 +54,10 @@ func (s *AuthService) SignUp(ctx context.Context, req SignUpRequest) (*AuthRespo
 	return &AuthResponse{
 		Token: token,
 		User: UserResponse{
-			ID:       user.ID,
-			Username: user.Username,
+			ID:        user.ID,
+			Username:  user.Username,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
 		},
 	}, nil
 }
@@ -81,8 +83,10 @@ func (s *AuthService) SignIn(ctx context.Context, req SignInRequest) (*AuthRespo
 	return &AuthResponse{
 		Token: token,
 		User: UserResponse{
-			ID:       user.ID,
-			Username: user.Username,
+			ID:        user.ID,
+			Username:  user.Username,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
 		},
 	}, nil
 }

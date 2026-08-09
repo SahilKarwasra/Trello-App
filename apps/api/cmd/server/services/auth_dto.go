@@ -1,6 +1,10 @@
 package services
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type SignUpRequest struct {
 	Username string `json:"username" binding:"required,min=3,max=50"`
@@ -13,8 +17,10 @@ type SignInRequest struct {
 }
 
 type UserResponse struct {
-	ID       uuid.UUID `json:"id"`
-	Username string    `json:"username"`
+	ID        uuid.UUID `json:"id"`
+	Username  string    `json:"username"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type AuthResponse struct {
