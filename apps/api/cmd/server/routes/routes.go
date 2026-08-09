@@ -2,19 +2,32 @@ package routes
 
 import (
 	"api/cmd/server/handler"
+	"api/cmd/server/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(authHandler *handler.AuthHandler) *gin.Engine {
+func SetupRouter(
+	jwtSecret string,
+	authHandler *handler.AuthHandler,
+	orgHandler *handler.OrganisationHandler,
+) *gin.Engine {
 	engine := gin.Default()
 
 	api := engine.Group("/api/v1")
 	{
+		// Public Auth routes
 		auth := api.Group("/auth")
 		{
 			auth.POST("/sign-up", authHandler.SignUp)
 			auth.POST("/sign-in", authHandler.SignIn)
+		}
+
+		// Protected routes (Requires Bearer JWT token)
+		protected := api.Group("")
+		protected.Use(middleware.AuthMiddleware(jwtSecret))
+		{
+			protected.POST("/organisation", orgHandler.CreateOrganisation)
 		}
 	}
 

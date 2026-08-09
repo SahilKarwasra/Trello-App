@@ -22,11 +22,20 @@ func main() {
 	}
 	log.Println("Connected to database")
 
+	// Repositories
 	userRepo := repository.NewUserRepository(db)
-	authService := services.NewAuthService(userRepo, cfg.JwtSecret)
-	authHandler := handler.NewAuthHandler(authService)
+	orgRepo := repository.NewOrganisationRepository(db)
 
-	router := routes.SetupRouter(authHandler)
+	// Services
+	authService := services.NewAuthService(userRepo, cfg.JwtSecret)
+	orgService := services.NewOrganisationService(orgRepo)
+
+	// Handlers
+	authHandler := handler.NewAuthHandler(authService)
+	orgHandler := handler.NewOrganisationHandler(orgService)
+
+	// Router
+	router := routes.SetupRouter(cfg.JwtSecret, authHandler, orgHandler)
 
 	log.Println("Starting HTTP server on :8080...")
 	if err := router.Run(":8080"); err != nil {
