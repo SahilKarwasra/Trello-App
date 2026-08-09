@@ -9,6 +9,7 @@ import (
 
 type Config struct {
 	DatabaseUrl string
+	JwtSecret   string
 }
 
 func LoadConfig() (*Config, error) {
@@ -19,7 +20,13 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("DATABASE_URL is not set")
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		return nil, fmt.Errorf("JWT_SECRET is not set")
+	}
+
 	return &Config{
 		DatabaseUrl: dbURL,
+		JwtSecret:   jwtSecret,
 	}, nil
 }
