@@ -5,6 +5,8 @@ import (
 	"context"
 	"database/models"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 type OrganisationService struct {
@@ -17,13 +19,22 @@ func NewOrganisationService(orgRepo repository.OrganisationRepository) *Organisa
 	}
 }
 
-func (s *OrganisationService) CreateOrganisation(ctx context.Context, req CreateOrganisationRequest) (*OrganisationResponse, error) {
+func (s *OrganisationService) CreateOrganisation(ctx context.Context, creatorID uuid.UUID, req CreateOrganisationRequest) (*OrganisationResponse, error) {
 	org := models.Organisations{
+		ID:          uuid.New(),
 		Title:       req.Title,
 		Description: req.Description,
 	}
 
-	if err := s.orgRepo.CreateOrganisation(ctx, &org); err != nil {
+	member := models.Members{
+		ID:           uuid.New(),
+		User:         creatorID.String(),
+		Organisation: org.ID.String(),
+		Role:         models.RoleAdmin,
+		Accepted:     true,
+	}
+
+	if err := s.orgRepo.CreateOrganisation(ctx, &org, &member); err != nil {
 		return nil, fmt.Errorf("failed to create organisation: %w", err)
 	}
 

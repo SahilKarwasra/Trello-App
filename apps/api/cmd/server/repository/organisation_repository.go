@@ -9,7 +9,7 @@ import (
 )
 
 type OrganisationRepository interface {
-	CreateOrganisation(ctx context.Context, org *models.Organisations) error
+	CreateOrganisation(ctx context.Context, org *models.Organisations, member *models.Members) error
 	FindByID(ctx context.Context, id uuid.UUID) (*models.Organisations, error)
 }
 
@@ -21,8 +21,16 @@ func NewOrganisationRepository(db *gorm.DB) OrganisationRepository {
 	return &organisationRepository{db: db}
 }
 
-func (r *organisationRepository) CreateOrganisation(ctx context.Context, org *models.Organisations) error {
-	return r.db.WithContext(ctx).Create(org).Error
+func (r *organisationRepository) CreateOrganisation(ctx context.Context, org *models.Organisations, member *models.Members) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(org).Error; err != nil {
+			return err
+		}
+		if err := tx.Create(member).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (r *organisationRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.Organisations, error) {
