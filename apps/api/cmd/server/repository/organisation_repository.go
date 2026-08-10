@@ -4,13 +4,13 @@ import (
 	"context"
 	"database/models"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type OrganisationRepository interface {
 	CreateOrganisation(ctx context.Context, org *models.Organisations, member *models.Members) error
-	FindByID(ctx context.Context, id uuid.UUID) (*models.Organisations, error)
+	CreateInvitation(ctx context.Context, member *models.Members) error
+	FindMember(ctx context.Context, orgID string, userID string) (*models.Members, error)
 }
 
 type organisationRepository struct {
@@ -33,11 +33,15 @@ func (r *organisationRepository) CreateOrganisation(ctx context.Context, org *mo
 	})
 }
 
-func (r *organisationRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.Organisations, error) {
-	var org models.Organisations
-	err := r.db.WithContext(ctx).Where("id = ?", id).First(&org).Error
+func (r *organisationRepository) CreateInvitation(ctx context.Context, member *models.Members) error {
+	return r.db.WithContext(ctx).Create(member).Error
+}
+
+func (r *organisationRepository) FindMember(ctx context.Context, orgID string, userID string) (*models.Members, error) {
+	var member models.Members
+	err := r.db.WithContext(ctx).Where("organisation = ? AND \"user\" = ?", orgID, userID).First(&member).Error
 	if err != nil {
 		return nil, err
 	}
-	return &org, nil
+	return &member, nil
 }

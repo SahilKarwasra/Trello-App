@@ -4,14 +4,12 @@ import (
 	"context"
 	"database/models"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *models.Users) error
 	FindByUsername(ctx context.Context, username string) (*models.Users, error)
-	FindByID(ctx context.Context, id uuid.UUID) (*models.Users, error)
 }
 
 type userRepository struct {
@@ -29,15 +27,6 @@ func (r *userRepository) CreateUser(ctx context.Context, user *models.Users) err
 func (r *userRepository) FindByUsername(ctx context.Context, username string) (*models.Users, error) {
 	var user models.Users
 	err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
-
-func (r *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.Users, error) {
-	var user models.Users
-	err := r.db.WithContext(ctx).Where("id = ?", id).First(&user).Error
 	if err != nil {
 		return nil, err
 	}

@@ -29,7 +29,7 @@ func main() {
 
 	// Services
 	authService := services.NewAuthService(userRepo, cfg.JwtSecret)
-	orgService := services.NewOrganisationService(orgRepo)
+	orgService := services.NewOrganisationService(orgRepo, userRepo)
 	boardService := services.NewBoardService(boardRepo)
 
 	// Handlers

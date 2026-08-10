@@ -1,6 +1,7 @@
 package services
 
 import (
+	"database/models"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,4 +18,18 @@ type OrganisationResponse struct {
 	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type InviteMemberRequest struct {
+	Username       string `json:"username" binding:"required"`
+	OrganizationID string `json:"organization_id" binding:"required"`
+}
+
+type InviteMemberResponse struct {
+	ID             uuid.UUID          `json:"id"`
+	User           string             `json:"user"`
+	OrganizationID string             `json:"organization_id"`
+	Role           models.MembersRole `json:"role"`
+	Accepted       bool               `json:"accepted"`
+	CreatedAt      time.Time          `json:"created_at"`
 }

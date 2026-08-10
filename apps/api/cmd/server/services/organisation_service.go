@@ -10,12 +10,14 @@ import (
 )
 
 type OrganisationService struct {
-	orgRepo repository.OrganisationRepository
+	orgRepo  repository.OrganisationRepository
+	userRepo repository.UserRepository
 }
 
-func NewOrganisationService(orgRepo repository.OrganisationRepository) *OrganisationService {
+func NewOrganisationService(orgRepo repository.OrganisationRepository, userRepo repository.UserRepository) *OrganisationService {
 	return &OrganisationService{
-		orgRepo: orgRepo,
+		orgRepo:  orgRepo,
+		userRepo: userRepo,
 	}
 }
 
@@ -44,5 +46,47 @@ func (s *OrganisationService) CreateOrganisation(ctx context.Context, creatorID 
 		Description: org.Description,
 		CreatedAt:   org.CreatedAt,
 		UpdatedAt:   org.UpdatedAt,
+	}, nil
+}
+
+func (s *OrganisationService) InviteMember(ctx context.Context, inviterID uuid.UUID, req InviteMemberRequest) (*InviteMemberResponse, error) {
+	// 1. Verify target user exists
+	targetUser, err := s.userRepo.FindByUsername(ctx, req.Username)
+	if err != nil {
+		return nil, fmt.Errorf("user %q not found", req.Username)
+	}
+
+	// 2. Verify inviter is a member of the organisation
+	_, err = s.orgRepo.FindMember(ctx, req.OrganizationID, inviterID.String())
+	if err != nil {
+		return nil, fmt.Errorf("unauthorized: you are not a member of this organisation")
+	}
+
+	// 3. Check if target user is already invited or a member
+	existing, _ := s.orgRepo.FindMember(ctx, req.OrganizationID, targetUser.ID.String())
+	if existing != nil {
+		return nil, fmt.Errorf("user %q is already a member or invited to this organisation", req.Username)
+	}
+
+	// 4. Create invitation record
+	member := models.Members{
+		ID:           uuid.New(),
+		User:         targetUser.ID.String(),
+		Organisation: req.OrganizationID,
+		Role:         models.RoleMember,
+		Accepted:     false,
+	}
+
+	if err := s.orgRepo.CreateInvitation(ctx, &member); err != nil {
+		return nil, fmt.Errorf("failed to invite member: %w", err)
+	}
+
+	return &InviteMemberResponse{
+		ID:             member.ID,
+		User:           targetUser.Username,
+		OrganizationID: member.Organisation,
+		Role:           member.Role,
+		Accepted:       member.Accepted,
+		CreatedAt:      member.CreatedAt,
 	}, nil
 }
