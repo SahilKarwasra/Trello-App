@@ -36,3 +36,23 @@ func (s *BoardService) CreateBoard(ctx context.Context, req BoardRequest) (*Boar
 		UpdatedAt:      board.UpdatedAt,
 	}, nil
 }
+
+func (s *BoardService) GetBoards(ctx context.Context, req GetBoardsRequest) ([]BoardResponse, error) {
+	boards, err := s.boardRepo.GetBoardsByOrganisationID(ctx, req.OrganizationID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get boards: %w", err)
+	}
+
+	res := make([]BoardResponse, 0, len(boards))
+	for _, b := range boards {
+		res = append(res, BoardResponse{
+			ID:             b.ID,
+			Title:          b.Title,
+			OrganizationID: b.Organisation,
+			CreatedAt:      b.CreatedAt,
+			UpdatedAt:      b.UpdatedAt,
+		})
+	}
+
+	return res, nil
+}

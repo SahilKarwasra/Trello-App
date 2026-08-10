@@ -18,3 +18,7 @@ type BoardResponse struct {
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
+
+type GetBoardsRequest struct {
+	OrganizationID string `form:"organization_id" binding:"required"`
+}

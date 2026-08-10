@@ -30,6 +30,7 @@ func SetupRouter(
 		{
 			protected.POST("/organisation", orgHandler.CreateOrganisation)
 			protected.POST("/board", boardHandler.CreateBoard)
+			protected.GET("/board", boardHandler.GetBoards)
 		}
 	}
 
