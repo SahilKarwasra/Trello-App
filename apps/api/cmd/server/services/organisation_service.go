@@ -90,3 +90,26 @@ func (s *OrganisationService) InviteMember(ctx context.Context, inviterID uuid.U
 		CreatedAt:      member.CreatedAt,
 	}, nil
 }
+
+func (s *OrganisationService) AcceptInvite(ctx context.Context, userID uuid.UUID, req AcceptInviteRequest) (*AcceptInviteResponse, error) {
+	// 1. check if invitation Exist
+	member, err := s.orgRepo.FindMember(ctx, req.OrganizationID, userID.String())
+	if err != nil {
+		return nil, fmt.Errorf("no invitation found for this organisation")
+	}
+
+	// 2. Check if invitation already accepted
+	if member.Accepted {
+		return nil, fmt.Errorf("invitation has already been accepted")
+	}
+
+	// 3. accept invitation
+	member.Accepted = true
+	if err := s.orgRepo.UpdateMember(ctx, member); err != nil {
+		return nil, fmt.Errorf("failed to accept invite: %w", err)
+	}
+
+	return &AcceptInviteResponse{
+		Message: "Invite accepted successfully",
+	}, nil
+}

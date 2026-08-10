@@ -33,3 +33,11 @@ type InviteMemberResponse struct {
 	Accepted       bool               `json:"accepted"`
 	CreatedAt      time.Time          `json:"created_at"`
 }
+
+type AcceptInviteRequest struct {
+	OrganizationID string `json:"organization_id" binding:"required"`
+}
+
+type AcceptInviteResponse struct {
+	Message string `json:"message"`
+}

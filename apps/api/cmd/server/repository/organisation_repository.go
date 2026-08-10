@@ -11,6 +11,7 @@ type OrganisationRepository interface {
 	CreateOrganisation(ctx context.Context, org *models.Organisations, member *models.Members) error
 	CreateInvitation(ctx context.Context, member *models.Members) error
 	FindMember(ctx context.Context, orgID string, userID string) (*models.Members, error)
+	UpdateMember(ctx context.Context, member *models.Members) error
 }
 
 type organisationRepository struct {
@@ -44,4 +45,8 @@ func (r *organisationRepository) FindMember(ctx context.Context, orgID string, u
 		return nil, err
 	}
 	return &member, nil
+}
+
+func (r *organisationRepository) UpdateMember(ctx context.Context, member *models.Members) error {
+	return r.db.WithContext(ctx).Save(member).Error
 }

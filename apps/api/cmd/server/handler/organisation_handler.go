@@ -73,3 +73,31 @@ func (h *OrganisationHandler) InviteMember(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, res)
 }
+
+func (h *OrganisationHandler) AcceptInvite(c *gin.Context) {
+	val, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	userID, ok := val.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user id in context"})
+		return
+	}
+
+	var req services.AcceptInviteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	res, err := h.orgService.AcceptInvite(c.Request.Context(), userID, req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}
