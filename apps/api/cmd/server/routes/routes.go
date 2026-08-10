@@ -11,6 +11,7 @@ func SetupRouter(
 	jwtSecret string,
 	authHandler *handler.AuthHandler,
 	orgHandler *handler.OrganisationHandler,
+	boardHandler *handler.BoardHandler,
 ) *gin.Engine {
 	engine := gin.Default()
 
@@ -28,6 +29,7 @@ func SetupRouter(
 		protected.Use(middleware.AuthMiddleware(jwtSecret))
 		{
 			protected.POST("/organisation", orgHandler.CreateOrganisation)
+			protected.POST("/board", boardHandler.CreateBoard)
 		}
 	}
 
