@@ -20,7 +20,6 @@ type SectionResponse struct {
 }
 
 type UpdateSectionRequest struct {
-	ID      string `json:"id" binding:"required"`
-	Title   string `json:"title" binding:"required"`
-	BoardID string `json:"board_id" binding:"required"`
+	SectionID string `json:"section_id" binding:"required"`
+	Title     string `json:"title" binding:"required"`
 }
