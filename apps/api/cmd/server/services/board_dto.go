@@ -15,6 +15,7 @@ type BoardResponse struct {
 	ID             uuid.UUID `json:"id"`
 	Title          string    `json:"title"`
 	OrganizationID string    `json:"organization_id"`
+	CreatedBy      string    `json:"created_by"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }

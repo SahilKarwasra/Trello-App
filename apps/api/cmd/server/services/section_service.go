@@ -21,9 +21,10 @@ func NewSectionService(sectionRepo repository.SectionRepository) *SectionService
 
 func (s *SectionService) CreateSection(ctx context.Context, req CreateSectionRequest) (*SectionResponse, error) {
 	section := models.Section{
-		ID:      uuid.New(),
-		Title:   req.Title,
-		BoardID: req.BoardID,
+		ID:       uuid.New(),
+		Title:    req.Title,
+		BoardID:  req.BoardID,
+		Position: req.Position,
 	}
 	if err := s.sectionRepo.CreateSection(ctx, &section); err != nil {
 		return nil, fmt.Errorf("failed to create section: %w", err)
@@ -32,6 +33,7 @@ func (s *SectionService) CreateSection(ctx context.Context, req CreateSectionReq
 		ID:        section.ID,
 		Title:     section.Title,
 		BoardID:   section.BoardID,
+		Position:  section.Position,
 		CreatedAt: section.CreatedAt,
 		UpdatedAt: section.UpdatedAt,
 	}, nil
@@ -58,6 +60,7 @@ func (s *SectionService) UpdateSection(ctx context.Context, req UpdateSectionReq
 		ID:        section.ID,
 		Title:     section.Title,
 		BoardID:   section.BoardID,
+		Position:  section.Position,
 		CreatedAt: section.CreatedAt,
 		UpdatedAt: section.UpdatedAt,
 	}, nil

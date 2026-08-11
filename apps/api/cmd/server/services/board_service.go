@@ -19,11 +19,12 @@ func NewBoardService(boardRepo repository.BoardRepository) *BoardService {
 	}
 }
 
-func (s *BoardService) CreateBoard(ctx context.Context, req BoardRequest) (*BoardResponse, error) {
+func (s *BoardService) CreateBoard(ctx context.Context, creatorID uuid.UUID, req BoardRequest) (*BoardResponse, error) {
 	board := models.Board{
 		ID:           uuid.New(),
 		Title:        req.Title,
 		Organisation: req.OrganizationID,
+		CreatedBy:    creatorID.String(),
 	}
 	if err := s.boardRepo.CreateBoard(ctx, &board); err != nil {
 		return nil, fmt.Errorf("failed to create board: %w", err)
@@ -32,6 +33,7 @@ func (s *BoardService) CreateBoard(ctx context.Context, req BoardRequest) (*Boar
 		ID:             board.ID,
 		Title:          board.Title,
 		OrganizationID: board.Organisation,
+		CreatedBy:      board.CreatedBy,
 		CreatedAt:      board.CreatedAt,
 		UpdatedAt:      board.UpdatedAt,
 	}, nil
@@ -49,6 +51,7 @@ func (s *BoardService) GetBoards(ctx context.Context, req GetBoardsRequest) ([]B
 			ID:             b.ID,
 			Title:          b.Title,
 			OrganizationID: b.Organisation,
+			CreatedBy:      b.CreatedBy,
 			CreatedAt:      b.CreatedAt,
 			UpdatedAt:      b.UpdatedAt,
 		})

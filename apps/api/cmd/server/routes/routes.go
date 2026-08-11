@@ -13,6 +13,7 @@ func SetupRouter(
 	orgHandler *handler.OrganisationHandler,
 	boardHandler *handler.BoardHandler,
 	sectionHandler *handler.SectionHandler,
+	issueHandler *handler.IssueHandler,
 ) *gin.Engine {
 	engine := gin.Default()
 
@@ -36,6 +37,7 @@ func SetupRouter(
 			protected.PATCH("/accept-invite", orgHandler.AcceptInvite)
 			protected.POST("/section", sectionHandler.CreateSection)
 			protected.PUT("/section", sectionHandler.UpdateSection)
+			protected.POST("/issue", issueHandler.CreateIssue)
 		}
 	}
 

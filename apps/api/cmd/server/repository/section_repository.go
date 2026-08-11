@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/models"
+	"fmt"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -25,7 +26,29 @@ func NewSectionRepository(db *gorm.DB) SectionRepository {
 }
 
 func (r *sectionRepository) CreateSection(ctx context.Context, section *models.Section) error {
-	return r.db.WithContext(ctx).Create(section).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var count int64
+		if err := tx.Model(&models.Section{}).Where("board_id = ?", section.BoardID).Count(&count).Error; err != nil {
+			return err
+		}
+
+		maxAllowed := int(count) + 1
+
+		if section.Position <= 0 {
+			section.Position = maxAllowed
+		} else if section.Position > maxAllowed {
+			return fmt.Errorf("invalid position %d: position cannot be greater than %d", section.Position, maxAllowed)
+		} else {
+			err := tx.Model(&models.Section{}).
+				Where("board_id = ? AND position >= ?", section.BoardID, section.Position).
+				UpdateColumn("position", gorm.Expr("position + ?", 1)).Error
+			if err != nil {
+				return err
+			}
+		}
+
+		return tx.Create(section).Error
+	})
 }
 
 func (r *sectionRepository) UpdateSection(ctx context.Context, section *models.Section) error {

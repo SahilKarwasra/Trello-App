@@ -1,0 +1,46 @@
+package services
+
+import (
+	"api/cmd/server/repository"
+	"context"
+	"database/models"
+	"fmt"
+
+	"github.com/google/uuid"
+)
+
+type IssueService struct {
+	issueRepo repository.IssueRepository
+}
+
+func NewIssueService(issueRepo repository.IssueRepository) *IssueService {
+	return &IssueService{
+		issueRepo: issueRepo,
+	}
+}
+
+func (s *IssueService) CreateIssue(ctx context.Context, creatorID uuid.UUID, req CreateIssueRequest) (*IssueResponse, error) {
+	issue := models.Issue{
+		ID:          uuid.New(),
+		Title:       req.Title,
+		Description: req.Description,
+		SectionID:   req.SectionID,
+		CreatedBy:   creatorID.String(),
+		Position:    req.Position,
+	}
+
+	if err := s.issueRepo.CreateIssue(ctx, &issue); err != nil {
+		return nil, fmt.Errorf("failed to create issue: %w", err)
+	}
+
+	return &IssueResponse{
+		ID:          issue.ID,
+		Title:       issue.Title,
+		Description: issue.Description,
+		SectionID:   issue.SectionID,
+		CreatedBy:   issue.CreatedBy,
+		Position:    issue.Position,
+		CreatedAt:   issue.CreatedAt,
+		UpdatedAt:   issue.UpdatedAt,
+	}, nil
+}

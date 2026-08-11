@@ -25,7 +25,7 @@ func (h *BoardHandler) CreateBoard(c *gin.Context) {
 		return
 	}
 
-	_, ok := val.(uuid.UUID)
+	userID, ok := val.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user id in context"})
 		return
@@ -37,7 +37,7 @@ func (h *BoardHandler) CreateBoard(c *gin.Context) {
 		return
 	}
 
-	res, err := h.boardService.CreateBoard(c.Request.Context(), req)
+	res, err := h.boardService.CreateBoard(c.Request.Context(), userID, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
