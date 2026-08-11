@@ -12,6 +12,7 @@ func SetupRouter(
 	authHandler *handler.AuthHandler,
 	orgHandler *handler.OrganisationHandler,
 	boardHandler *handler.BoardHandler,
+	sectionHandler *handler.SectionHandler,
 ) *gin.Engine {
 	engine := gin.Default()
 
@@ -33,6 +34,7 @@ func SetupRouter(
 			protected.GET("/board", boardHandler.GetBoards)
 			protected.POST("/invite", orgHandler.InviteMember)
 			protected.PATCH("/accept-invite", orgHandler.AcceptInvite)
+			protected.POST("/section", sectionHandler.CreateSection)
 		}
 	}
 

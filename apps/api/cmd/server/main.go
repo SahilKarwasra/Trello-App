@@ -26,19 +26,22 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	orgRepo := repository.NewOrganisationRepository(db)
 	boardRepo := repository.NewBoardRepository(db)
+	sectionRepo := repository.NewSectionRepository(db)
 
 	// Services
 	authService := services.NewAuthService(userRepo, cfg.JwtSecret)
 	orgService := services.NewOrganisationService(orgRepo, userRepo)
 	boardService := services.NewBoardService(boardRepo)
+	sectionService := services.NewSectionService(sectionRepo)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
 	orgHandler := handler.NewOrganisationHandler(orgService)
 	boardHandler := handler.NewBoardHandler(boardService)
+	sectionHandler := handler.NewSectionHandler(sectionService)
 
 	// Router
-	router := routes.SetupRouter(cfg.JwtSecret, authHandler, orgHandler, boardHandler)
+	router := routes.SetupRouter(cfg.JwtSecret, authHandler, orgHandler, boardHandler, sectionHandler)
 
 	log.Println("Starting HTTP server on :8080...")
 	if err := router.Run(":8080"); err != nil {
