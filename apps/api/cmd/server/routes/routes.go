@@ -50,6 +50,10 @@ func SetupRouter(
 			protected.GET("/section", sectionHandler.GetSections)
 			protected.PUT("/section", sectionHandler.UpdateSection)
 			protected.POST("/issue", issueHandler.CreateIssue)
+			protected.PATCH("/move-issue", issueHandler.MoveIssue)
+			protected.PATCH("/move-section", sectionHandler.MoveSection)
+			protected.DELETE("/issue", issueHandler.DeleteIssue)
+			protected.DELETE("/section", sectionHandler.DeleteSection)
 		}
 	}
 

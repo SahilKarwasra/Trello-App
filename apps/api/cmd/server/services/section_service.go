@@ -21,7 +21,7 @@ func NewSectionService(sectionRepo repository.SectionRepository, issueRepo repos
 	}
 }
 
-func (s *SectionService) GetSections(ctx context.Context, req GetSectionsRequest) ([]SectionResponse, error) {
+func (s *SectionService) GetSections(ctx context.Context, req GetSectionsRequest) ([]SectionWithIssuesResponse, error) {
 	sections, err := s.sectionRepo.GetSections(ctx, req.BoardID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sections: %w", err)
@@ -46,14 +46,14 @@ func (s *SectionService) GetSections(ctx context.Context, req GetSectionsRequest
 		})
 	}
 
-	res := make([]SectionResponse, 0, len(sections))
+	res := make([]SectionWithIssuesResponse, 0, len(sections))
 	for _, sec := range sections {
 		secID := sec.ID.String()
 		secIssues := issuesBySection[secID]
 		if secIssues == nil {
 			secIssues = make([]IssueResponse, 0)
 		}
-		res = append(res, SectionResponse{
+		res = append(res, SectionWithIssuesResponse{
 			ID:        sec.ID,
 			Title:     sec.Title,
 			BoardID:   sec.BoardID,
@@ -84,7 +84,6 @@ func (s *SectionService) CreateSection(ctx context.Context, req CreateSectionReq
 		Position:  section.Position,
 		CreatedAt: section.CreatedAt,
 		UpdatedAt: section.UpdatedAt,
-		Issues:    make([]IssueResponse, 0),
 	}, nil
 }
 
@@ -112,7 +111,41 @@ func (s *SectionService) UpdateSection(ctx context.Context, req UpdateSectionReq
 		Position:  section.Position,
 		CreatedAt: section.CreatedAt,
 		UpdatedAt: section.UpdatedAt,
-		Issues:    make([]IssueResponse, 0),
 	}, nil
 }
+
+func (s *SectionService) MoveSection(ctx context.Context, req MoveSectionRequest) (*SectionResponse, error) {
+	sectionUUID, err := uuid.Parse(req.SectionID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid section ID: %w", err)
+	}
+
+	updatedSection, err := s.sectionRepo.MoveSection(ctx, sectionUUID, req.NewPosition)
+	if err != nil {
+		return nil, fmt.Errorf("failed to move section: %w", err)
+	}
+
+	return &SectionResponse{
+		ID:        updatedSection.ID,
+		Title:     updatedSection.Title,
+		BoardID:   updatedSection.BoardID,
+		Position:  updatedSection.Position,
+		CreatedAt: updatedSection.CreatedAt,
+		UpdatedAt: updatedSection.UpdatedAt,
+	}, nil
+}
+
+func (s *SectionService) DeleteSection(ctx context.Context, req DeleteSectionRequest) error {
+	sectionUUID, err := uuid.Parse(req.SectionID)
+	if err != nil {
+		return fmt.Errorf("invalid section ID: %w", err)
+	}
+
+	if err := s.sectionRepo.DeleteSection(ctx, sectionUUID); err != nil {
+		return fmt.Errorf("failed to delete section: %w", err)
+	}
+
+	return nil
+}
+
 

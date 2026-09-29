@@ -24,3 +24,13 @@ type IssueResponse struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
+type MoveIssueRequest struct {
+	IssueID      string `json:"issue_id" binding:"required"`
+	NewPosition  int    `json:"new_position" binding:"required,min=1"`
+	NewSectionID string `json:"new_section_id" binding:"required"`
+}
+
+type DeleteIssueRequest struct {
+	IssueID string `form:"issue_id" json:"issue_id" binding:"required"`
+}
+
