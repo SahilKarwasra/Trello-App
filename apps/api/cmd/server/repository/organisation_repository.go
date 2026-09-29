@@ -64,4 +64,3 @@ func (r *organisationRepository) GetOrganisations(ctx context.Context, userID st
 	}
 	return orgs, nil
 }
-

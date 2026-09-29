@@ -47,6 +47,7 @@ func SetupRouter(
 			protected.POST("/invite", orgHandler.InviteMember)
 			protected.PATCH("/accept-invite", orgHandler.AcceptInvite)
 			protected.POST("/section", sectionHandler.CreateSection)
+			protected.GET("/section", sectionHandler.GetSections)
 			protected.PUT("/section", sectionHandler.UpdateSection)
 			protected.POST("/issue", issueHandler.CreateIssue)
 		}

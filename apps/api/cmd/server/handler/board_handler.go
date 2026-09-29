@@ -74,4 +74,3 @@ func (h *BoardHandler) GetBoards(c *gin.Context) {
 
 	utils.Success(c, http.StatusOK, "Boards retrieved successfully", res)
 }
-

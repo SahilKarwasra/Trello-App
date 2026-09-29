@@ -12,6 +12,10 @@ type CreateSectionRequest struct {
 	Position int    `json:"position"`
 }
 
+type GetSectionsRequest struct {
+	BoardID string `json:"board_id" binding:"required"`
+}
+
 type SectionResponse struct {
 	ID        uuid.UUID `json:"id"`
 	Title     string    `json:"title"`

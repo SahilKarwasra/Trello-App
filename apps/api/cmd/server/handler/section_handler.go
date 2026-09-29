@@ -47,6 +47,33 @@ func (h *SectionHandler) CreateSection(c *gin.Context) {
 	utils.Success(c, http.StatusCreated, "Section created successfully", res)
 }
 
+func (h *SectionHandler) GetSections(c *gin.Context) {
+	val, exists := c.Get("userID")
+	if !exists {
+		utils.Unauthorized(c, "unauthorized")
+		return
+	}
+
+	_, ok := val.(uuid.UUID)
+	if !ok {
+		utils.Unauthorized(c, "invalid user id in context")
+		return
+	}
+
+	var req services.GetSectionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.BadRequest(c, utils.FormatValidationError(err))
+		return
+	}
+
+	res, err := h.sectionService.GetSections(c.Request.Context(), req)
+	if err != nil {
+		utils.InternalServerError(c, err.Error())
+		return
+	}
+
+	utils.Success(c, http.StatusOK, "Sections fetched successfully", res)
+}
 func (h *SectionHandler) UpdateSection(c *gin.Context) {
 	val, exists := c.Get("userID")
 	if !exists {
@@ -74,4 +101,3 @@ func (h *SectionHandler) UpdateSection(c *gin.Context) {
 
 	utils.Success(c, http.StatusOK, "Section updated successfully", res)
 }
-

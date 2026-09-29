@@ -12,6 +12,7 @@ import (
 type SectionRepository interface {
 	CreateSection(ctx context.Context, section *models.Section) error
 	UpdateSection(ctx context.Context, section *models.Section) error
+	GetSections(ctx context.Context, boardID string) ([]models.Section, error)
 	FindByID(ctx context.Context, id uuid.UUID) (*models.Section, error)
 }
 
@@ -23,6 +24,15 @@ func NewSectionRepository(db *gorm.DB) SectionRepository {
 	return &sectionRepository{
 		db: db,
 	}
+}
+
+func (r *sectionRepository) GetSections(ctx context.Context, boardID string) ([]models.Section, error) {
+	var sections []models.Section
+	err := r.db.WithContext(ctx).Where("board_id = ?", boardID).Order("position ASC").Find(&sections).Error
+	if err != nil {
+		return nil, err
+	}
+	return sections, nil
 }
 
 func (r *sectionRepository) CreateSection(ctx context.Context, section *models.Section) error {

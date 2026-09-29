@@ -124,4 +124,3 @@ func (h *OrganisationHandler) AcceptInvite(c *gin.Context) {
 
 	utils.Success(c, http.StatusOK, "Invite accepted successfully", res)
 }
-

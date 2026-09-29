@@ -19,6 +19,27 @@ func NewSectionService(sectionRepo repository.SectionRepository) *SectionService
 	}
 }
 
+func (s *SectionService) GetSections(ctx context.Context, req GetSectionsRequest) ([]SectionResponse, error) {
+	sections, err := s.sectionRepo.GetSections(ctx, req.BoardID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get sections: %w", err)
+	}
+
+	res := make([]SectionResponse, 0, len(sections))
+	for _, s := range sections {
+		res = append(res, SectionResponse{
+			ID:        s.ID,
+			Title:     s.Title,
+			BoardID:   s.BoardID,
+			Position:  s.Position,
+			CreatedAt: s.CreatedAt,
+			UpdatedAt: s.UpdatedAt,
+		})
+	}
+
+	return res, nil
+}
+
 func (s *SectionService) CreateSection(ctx context.Context, req CreateSectionRequest) (*SectionResponse, error) {
 	section := models.Section{
 		ID:       uuid.New(),
