@@ -49,6 +49,26 @@ func (s *OrganisationService) CreateOrganisation(ctx context.Context, creatorID 
 	}, nil
 }
 
+func (s *OrganisationService) GetOrganisations(ctx context.Context, userID uuid.UUID) ([]OrganisationResponse, error) {
+	orgs, err := s.orgRepo.GetOrganisations(ctx, userID.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organisations: %w", err)
+	}
+
+	res := make([]OrganisationResponse, 0, len(orgs))
+	for _, o := range orgs {
+		res = append(res, OrganisationResponse{
+			ID:          o.ID,
+			Title:       o.Title,
+			Description: o.Description,
+			CreatedAt:   o.CreatedAt,
+			UpdatedAt:   o.UpdatedAt,
+		})
+	}
+
+	return res, nil
+}
+
 func (s *OrganisationService) InviteMember(ctx context.Context, inviterID uuid.UUID, req InviteMemberRequest) (*InviteMemberResponse, error) {
 	// 1. Verify target user exists
 	targetUser, err := s.userRepo.FindByUsername(ctx, req.Username)

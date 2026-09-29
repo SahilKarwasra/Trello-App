@@ -2,6 +2,7 @@ package handler
 
 import (
 	"api/cmd/server/services"
+	"api/cmd/server/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,27 +22,28 @@ func NewIssueHandler(issueService *services.IssueService) *IssueHandler {
 func (h *IssueHandler) CreateIssue(c *gin.Context) {
 	val, exists := c.Get("userID")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		utils.Unauthorized(c, "unauthorized")
 		return
 	}
 
 	creatorID, ok := val.(uuid.UUID)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user id in context"})
+		utils.Unauthorized(c, "invalid user id in context")
 		return
 	}
 
 	var req services.CreateIssueRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.BadRequest(c, utils.FormatValidationError(err))
 		return
 	}
 
 	res, err := h.issueService.CreateIssue(c.Request.Context(), creatorID, req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.InternalServerError(c, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusCreated, res)
+	utils.Success(c, http.StatusCreated, "Issue created successfully", res)
 }
+

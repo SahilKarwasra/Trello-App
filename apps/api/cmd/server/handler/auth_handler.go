@@ -22,39 +22,40 @@ func NewAuthHandler(authService *services.AuthService) *AuthHandler {
 func (h *AuthHandler) SignUp(c *gin.Context) {
 	var req services.SignUpRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.BadRequest(c, utils.FormatValidationError(err))
 		return
 	}
 
 	res, err := h.authService.SignUp(c.Request.Context(), req)
 	if err != nil {
 		if errors.Is(err, utils.ErrUsernameAlreadyExists) {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			utils.Conflict(c, err.Error())
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.InternalServerError(c, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusCreated, res)
+	utils.Success(c, http.StatusCreated, "User registered successfully", res)
 }
 
 func (h *AuthHandler) SignIn(c *gin.Context) {
 	var req services.SignInRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.BadRequest(c, utils.FormatValidationError(err))
 		return
 	}
 
 	res, err := h.authService.SignIn(c.Request.Context(), req)
 	if err != nil {
 		if errors.Is(err, utils.ErrInvalidCredentials) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			utils.Unauthorized(c, err.Error())
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.InternalServerError(c, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, res)
+	utils.Success(c, http.StatusOK, "Signed in successfully", res)
 }
+

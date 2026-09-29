@@ -10,6 +10,7 @@ import (
 type OrganisationRepository interface {
 	CreateOrganisation(ctx context.Context, org *models.Organisations, member *models.Members) error
 	CreateInvitation(ctx context.Context, member *models.Members) error
+	GetOrganisations(ctx context.Context, userID string) ([]models.Organisations, error)
 	FindMember(ctx context.Context, orgID string, userID string) (*models.Members, error)
 	UpdateMember(ctx context.Context, member *models.Members) error
 }
@@ -50,3 +51,17 @@ func (r *organisationRepository) FindMember(ctx context.Context, orgID string, u
 func (r *organisationRepository) UpdateMember(ctx context.Context, member *models.Members) error {
 	return r.db.WithContext(ctx).Save(member).Error
 }
+
+func (r *organisationRepository) GetOrganisations(ctx context.Context, userID string) ([]models.Organisations, error) {
+	var orgs []models.Organisations
+	err := r.db.WithContext(ctx).
+		Table("organisations").
+		Joins("JOIN members ON members.organisation = organisations.id::text").
+		Where("members.\"user\" = ? AND members.accepted = ?", userID, true).
+		Find(&orgs).Error
+	if err != nil {
+		return nil, err
+	}
+	return orgs, nil
+}
+

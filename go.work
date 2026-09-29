@@ -3,6 +3,6 @@ go 1.25.6
 use (
 	./apps/api
 	./apps/websocket
-	./packages/database
 	./packages/config
+	./packages/database
 )
