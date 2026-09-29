@@ -61,9 +61,11 @@ func (h *SectionHandler) GetSections(c *gin.Context) {
 	}
 
 	var req services.GetSectionsRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.BadRequest(c, utils.FormatValidationError(err))
-		return
+	if err := c.ShouldBindQuery(&req); err != nil || req.BoardID == "" {
+		if jsonErr := c.ShouldBindJSON(&req); jsonErr != nil || req.BoardID == "" {
+			utils.BadRequest(c, utils.FormatValidationError(err))
+			return
+		}
 	}
 
 	res, err := h.sectionService.GetSections(c.Request.Context(), req)

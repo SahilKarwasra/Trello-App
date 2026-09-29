@@ -46,4 +46,3 @@ func (h *IssueHandler) CreateIssue(c *gin.Context) {
 
 	utils.Success(c, http.StatusCreated, "Issue created successfully", res)
 }
-

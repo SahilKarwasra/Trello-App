@@ -10,6 +10,7 @@ import (
 
 type IssueRepository interface {
 	CreateIssue(ctx context.Context, issue *models.Issue) error
+	GetIssuesByBoardID(ctx context.Context, boardID string) ([]models.Issue, error)
 }
 
 type issueRepository struct {
@@ -20,6 +21,20 @@ func NewIssueRepository(db *gorm.DB) IssueRepository {
 	return &issueRepository{
 		db: db,
 	}
+}
+
+func (r *issueRepository) GetIssuesByBoardID(ctx context.Context, boardID string) ([]models.Issue, error) {
+	var issues []models.Issue
+	err := r.db.WithContext(ctx).
+		Table("issues").
+		Joins("JOIN sections ON sections.id::text = issues.section_id").
+		Where("sections.board_id = ?", boardID).
+		Order("issues.position ASC").
+		Find(&issues).Error
+	if err != nil {
+		return nil, err
+	}
+	return issues, nil
 }
 
 func (r *issueRepository) CreateIssue(ctx context.Context, issue *models.Issue) error {

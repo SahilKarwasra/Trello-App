@@ -13,16 +13,17 @@ type CreateSectionRequest struct {
 }
 
 type GetSectionsRequest struct {
-	BoardID string `json:"board_id" binding:"required"`
+	BoardID string `form:"board_id" json:"board_id" binding:"required"`
 }
 
 type SectionResponse struct {
-	ID        uuid.UUID `json:"id"`
-	Title     string    `json:"title"`
-	BoardID   string    `json:"board_id"`
-	Position  int       `json:"position"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        uuid.UUID       `json:"id"`
+	Title     string          `json:"title"`
+	BoardID   string          `json:"board_id"`
+	Position  int             `json:"position"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
+	Issues    []IssueResponse `json:"issues"`
 }
 
 type UpdateSectionRequest struct {

@@ -11,11 +11,13 @@ import (
 
 type SectionService struct {
 	sectionRepo repository.SectionRepository
+	issueRepo   repository.IssueRepository
 }
 
-func NewSectionService(sectionRepo repository.SectionRepository) *SectionService {
+func NewSectionService(sectionRepo repository.SectionRepository, issueRepo repository.IssueRepository) *SectionService {
 	return &SectionService{
 		sectionRepo: sectionRepo,
+		issueRepo:   issueRepo,
 	}
 }
 
@@ -25,15 +27,40 @@ func (s *SectionService) GetSections(ctx context.Context, req GetSectionsRequest
 		return nil, fmt.Errorf("failed to get sections: %w", err)
 	}
 
+	issues, err := s.issueRepo.GetIssuesByBoardID(ctx, req.BoardID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get issues: %w", err)
+	}
+
+	issuesBySection := make(map[string][]IssueResponse)
+	for _, issue := range issues {
+		issuesBySection[issue.SectionID] = append(issuesBySection[issue.SectionID], IssueResponse{
+			ID:          issue.ID,
+			Title:       issue.Title,
+			Description: issue.Description,
+			SectionID:   issue.SectionID,
+			CreatedBy:   issue.CreatedBy,
+			Position:    issue.Position,
+			CreatedAt:   issue.CreatedAt,
+			UpdatedAt:   issue.UpdatedAt,
+		})
+	}
+
 	res := make([]SectionResponse, 0, len(sections))
-	for _, s := range sections {
+	for _, sec := range sections {
+		secID := sec.ID.String()
+		secIssues := issuesBySection[secID]
+		if secIssues == nil {
+			secIssues = make([]IssueResponse, 0)
+		}
 		res = append(res, SectionResponse{
-			ID:        s.ID,
-			Title:     s.Title,
-			BoardID:   s.BoardID,
-			Position:  s.Position,
-			CreatedAt: s.CreatedAt,
-			UpdatedAt: s.UpdatedAt,
+			ID:        sec.ID,
+			Title:     sec.Title,
+			BoardID:   sec.BoardID,
+			Position:  sec.Position,
+			CreatedAt: sec.CreatedAt,
+			UpdatedAt: sec.UpdatedAt,
+			Issues:    secIssues,
 		})
 	}
 
@@ -57,6 +84,7 @@ func (s *SectionService) CreateSection(ctx context.Context, req CreateSectionReq
 		Position:  section.Position,
 		CreatedAt: section.CreatedAt,
 		UpdatedAt: section.UpdatedAt,
+		Issues:    make([]IssueResponse, 0),
 	}, nil
 }
 
@@ -84,5 +112,7 @@ func (s *SectionService) UpdateSection(ctx context.Context, req UpdateSectionReq
 		Position:  section.Position,
 		CreatedAt: section.CreatedAt,
 		UpdatedAt: section.UpdatedAt,
+		Issues:    make([]IssueResponse, 0),
 	}, nil
 }
+

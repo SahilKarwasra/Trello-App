@@ -33,7 +33,7 @@ func main() {
 	authService := services.NewAuthService(userRepo, cfg.JwtSecret)
 	orgService := services.NewOrganisationService(orgRepo, userRepo)
 	boardService := services.NewBoardService(boardRepo)
-	sectionService := services.NewSectionService(sectionRepo)
+	sectionService := services.NewSectionService(sectionRepo, issueRepo)
 	issueService := services.NewIssueService(issueRepo)
 
 	// Handlers
