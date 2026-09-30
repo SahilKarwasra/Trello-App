@@ -2,6 +2,7 @@ package com.laarasoft.frontend.config.di
 
 import com.laarasoft.frontend.core.utils.TokenProvider
 import com.laarasoft.frontend.features.auth.presentation.login.LoginViewModel
+import com.laarasoft.frontend.features.auth.presentation.signup.SignupViewModel
 import com.laarasoft.frontend.features.home.presentation.HomeViewModel
 import com.laarasoft.frontend.features.splash.presentation.SplashViewModel
 import io.ktor.client.HttpClient
@@ -56,6 +57,7 @@ val sharedModules = module {
     }
     viewModelOf(::SplashViewModel)
     viewModelOf(::LoginViewModel)
+    viewModelOf(::SignupViewModel)
     viewModelOf(::HomeViewModel)
 }
 

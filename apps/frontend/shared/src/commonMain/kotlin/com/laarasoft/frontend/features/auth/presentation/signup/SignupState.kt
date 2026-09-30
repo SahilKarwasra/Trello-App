@@ -1,6 +1,6 @@
-package com.laarasoft.frontend.features.auth.presentation.login
+package com.laarasoft.frontend.features.auth.presentation.signup
 
-data class LoginState(
+data class SignupState(
     val username: String = "",
     val password: String = "",
     val isPasswordVisible: Boolean = false,

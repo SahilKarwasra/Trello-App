@@ -26,6 +26,7 @@ import com.laarasoft.frontend.core.utils.ui.DialogButtonStyle
 import com.laarasoft.frontend.core.utils.ui.UiEvent
 import com.laarasoft.frontend.core.utils.ui.UiEventController
 import com.laarasoft.frontend.features.auth.presentation.login.LoginRoot
+import com.laarasoft.frontend.features.auth.presentation.signup.SignupRoot
 import com.laarasoft.frontend.features.home.presentation.HomeRoot
 import com.laarasoft.frontend.features.home.presentation.HomeScreen
 import com.laarasoft.frontend.features.splash.presentation.SplashRoot
@@ -113,13 +114,6 @@ fun AppNavigation() {
             authGraph(appController)
             homeGraph(appController)
         }
-
-        dialogEvent?.let { dialog ->
-            AppDialog(
-                event = dialog,
-                onDismiss = { dialogEvent = null }
-            )
-        }
     }
 }
 
@@ -128,7 +122,18 @@ private fun NavGraphBuilder.authGraph(appController: TrelloController) {
         startDestination = AuthScreenDestination.LoginScreen
     ) {
         composable<AuthScreenDestination.LoginScreen> {
-            LoginRoot()
+            LoginRoot(
+                navigateToSignup = {
+                    appController.navigate(it)
+                }
+            )
+        }
+        composable<AuthScreenDestination.SignupScreen> {
+            SignupRoot(
+                navigateToLogin = {
+                    appController.upPress()
+                }
+            )
         }
     }
 }

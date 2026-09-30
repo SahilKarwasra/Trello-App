@@ -1,4 +1,4 @@
-package com.laarasoft.frontend.features.auth.presentation.login
+package com.laarasoft.frontend.features.auth.presentation.signup
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -29,37 +29,35 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.laarasoft.frontend.config.navigation.AuthScreenDestination
-import com.laarasoft.frontend.config.navigation.UserScreenDestination
 import com.laarasoft.frontend.core.theme.TrelloTheme
 import com.laarasoft.frontend.core.utils.ObserveAsEvents
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun LoginRoot(
-    viewModel: LoginViewModel = koinViewModel(),
-    navigateToSignup: (AuthScreenDestination) -> Unit,
-    navigateToHome: (UserScreenDestination) -> Unit = {}
+fun SignupRoot(
+    viewModel: SignupViewModel = koinViewModel(),
+    navigateToLogin: () -> Unit,
+    navigateToHome: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
-            is LoginEvents.NavigateToSignup -> navigateToSignup(event.destination)
-            is LoginEvents.NavigateToHome -> navigateToHome(event.destination)
+            is SignupEvents.NavigateToLogin -> navigateToLogin()
+            is SignupEvents.NavigateToHome -> navigateToHome()
         }
     }
 
-    LoginScreen(
+    SignupScreen(
         state = state,
         onAction = viewModel::onAction
     )
 }
 
 @Composable
-fun LoginScreen(
-    state: LoginState,
-    onAction: (LoginAction) -> Unit,
+fun SignupScreen(
+    state: SignupState,
+    onAction: (SignupAction) -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -96,7 +94,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Welcome back",
+                    text = "Create an account",
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
@@ -105,7 +103,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Please enter your details to sign in",
+                    text = "Enter your username and password to get started",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -114,9 +112,9 @@ fun LoginScreen(
 
                 OutlinedTextField(
                     value = state.username,
-                    onValueChange = { onAction(LoginAction.OnUsernameChange(it)) },
+                    onValueChange = { onAction(SignupAction.OnUsernameChange(it)) },
                     label = { Text("Username") },
-                    placeholder = { Text("Enter your username") },
+                    placeholder = { Text("Choose a username") },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -126,13 +124,13 @@ fun LoginScreen(
 
                 OutlinedTextField(
                     value = state.password,
-                    onValueChange = { onAction(LoginAction.OnPasswordChange(it)) },
+                    onValueChange = { onAction(SignupAction.OnPasswordChange(it)) },
                     label = { Text("Password") },
-                    placeholder = { Text("Enter your password") },
+                    placeholder = { Text("Create a password") },
                     singleLine = true,
                     visualTransformation = if (state.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
-                        TextButton(onClick = { onAction(LoginAction.OnTogglePasswordVisibility) }) {
+                        TextButton(onClick = { onAction(SignupAction.OnTogglePasswordVisibility) }) {
                             Text(
                                 text = if (state.isPasswordVisible) "Hide" else "Show",
                                 style = MaterialTheme.typography.labelMedium
@@ -146,14 +144,14 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(28.dp))
 
                 Button(
-                    onClick = { onAction(LoginAction.OnSubmit) },
+                    onClick = { onAction(SignupAction.OnSubmit) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "Sign In",
+                        text = "Sign Up",
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
@@ -165,13 +163,13 @@ fun LoginScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Don't have an account?",
+                        text = "Already have an account?",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    TextButton(onClick = { onAction(LoginAction.OnNavigateToSignup) }) {
+                    TextButton(onClick = { onAction(SignupAction.OnNavigateToLogin) }) {
                         Text(
-                            text = "Sign Up",
+                            text = "Log In",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
@@ -185,10 +183,10 @@ fun LoginScreen(
 
 @Preview
 @Composable
-private fun LoginPreview() {
+private fun SignupPreview() {
     TrelloTheme {
-        LoginScreen(
-            state = LoginState(),
+        SignupScreen(
+            state = SignupState(),
             onAction = {}
         )
     }
