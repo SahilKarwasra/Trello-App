@@ -21,18 +21,7 @@ kotlin {
     }
     
     jvm()
-    
-    js {
-        browser()
-        binaries.executable()
-    }
-    
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        browser()
-        binaries.executable()
-    }
-    
+
     android {
        namespace = "com.laarasoft.frontend.shared"
        compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -61,7 +50,6 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.koin.android)
             implementation(libs.koin.androidx.compose)
-            implementation(libs.datastore.preferences)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -78,6 +66,9 @@ kotlin {
 
             api(libs.koin.core)
             implementation(libs.bundles.koinbundle)
+            api(libs.datastore.preferences)
+            api(libs.datastore)
+
 
             implementation(libs.bundles.ktor)
             implementation(libs.bundles.coil)
@@ -87,12 +78,8 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
-        jsMain.dependencies {
-            implementation(libs.wrappers.browser)
-        }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
-            implementation(libs.datastore.preferences)
         }
     }
 }

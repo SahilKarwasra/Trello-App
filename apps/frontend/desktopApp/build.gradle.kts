@@ -13,9 +13,6 @@ dependencies {
     implementation(libs.kotlinx.coroutinesSwing)
 
     implementation(libs.compose.uiToolingPreview)
-    implementation(libs.datastore.preferences)
-
-
 }
 
 compose.desktop {
