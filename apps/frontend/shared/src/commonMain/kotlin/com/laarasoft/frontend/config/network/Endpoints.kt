@@ -1,10 +1,19 @@
 package com.laarasoft.frontend.config.network
 
 object Endpoints {
-    const val BASE_URL = "http://localhost:8080/api/v1"
-    const val SIGN_IN = "$BASE_URL/auth/sign-in"
-    const val SIGN_UP = "$BASE_URL/auth/sign-up"
-    const val ORGANISATIONS = "$BASE_URL/organisation"
-    const val BOARDS = "$BASE_URL/board"
-    const val INVITE = "$BASE_URL/invite"
+    private var customHost: String? = null
+
+    var host: String
+        get() = customHost ?: PLATFORM_HOST
+        set(value) {
+            customHost = value
+        }
+
+    val BASE_URL: String get() = "http://$host:8080/api/v1"
+    val SIGN_IN: String get() = "$BASE_URL/auth/sign-in"
+    val SIGN_UP: String get() = "$BASE_URL/auth/sign-up"
+    val ORGANISATIONS: String get() = "$BASE_URL/organisation"
+    val BOARDS: String get() = "$BASE_URL/board"
+    val INVITE: String get() = "$BASE_URL/invite"
+    val SECTIONS: String get() = "$BASE_URL/section"
 }

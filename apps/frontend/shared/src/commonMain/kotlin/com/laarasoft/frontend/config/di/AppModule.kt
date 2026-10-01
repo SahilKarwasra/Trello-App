@@ -18,17 +18,21 @@ import com.laarasoft.frontend.features.board.data.api.BoardApiImpl
 import com.laarasoft.frontend.features.board.data.repository.BoardRepositoryImpl
 import com.laarasoft.frontend.features.board.domain.api.BoardApi
 import com.laarasoft.frontend.features.board.domain.repository.BoardRepository
+import com.laarasoft.frontend.features.kanban.data.api.SectionApiImpl
+import com.laarasoft.frontend.features.kanban.data.repository.SectionRepositoryImpl
+import com.laarasoft.frontend.features.kanban.domain.api.SectionApi
+import com.laarasoft.frontend.features.kanban.domain.repository.SectionRepository
+import com.laarasoft.frontend.features.kanban.presentation.KanbanViewModel
 import com.laarasoft.frontend.features.splash.presentation.SplashViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngine
+import com.laarasoft.frontend.config.network.platformHttpLogger
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.serialization.kotlinx.json.json
@@ -60,7 +64,7 @@ val sharedModules = module {
                 })
             }
             install(Logging) {
-                logger = Logger.DEFAULT
+                logger = platformHttpLogger
                 level = LogLevel.ALL
             }
             install(WebSockets)
@@ -85,11 +89,15 @@ val sharedModules = module {
     singleOf(::BoardApiImpl).bind<BoardApi>()
     singleOf(::BoardRepositoryImpl).bind<BoardRepository>()
 
+    singleOf(::SectionApiImpl).bind<SectionApi>()
+    singleOf(::SectionRepositoryImpl).bind<SectionRepository>()
+
     viewModelOf(::SplashViewModel)
     viewModelOf(::LoginViewModel)
     viewModelOf(::SignupViewModel)
     viewModelOf(::CreateOrSelectOrgViewModel)
     viewModelOf(::HomeViewModel)
+    viewModelOf(::KanbanViewModel)
 
 
 

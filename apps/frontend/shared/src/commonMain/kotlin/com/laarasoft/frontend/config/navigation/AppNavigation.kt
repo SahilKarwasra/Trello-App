@@ -26,6 +26,7 @@ import com.laarasoft.frontend.features.auth.presentation.login.LoginRoot
 import com.laarasoft.frontend.features.auth.presentation.signup.SignupRoot
 import com.laarasoft.frontend.features.organisation.presentation.CreateOrSelectOrgRoot
 import com.laarasoft.frontend.features.home.presentation.HomeRoot
+import com.laarasoft.frontend.features.kanban.presentation.KanbanRoot
 import com.laarasoft.frontend.features.splash.presentation.SplashRoot
 import kotlinx.coroutines.launch
 
@@ -155,7 +156,25 @@ private fun NavGraphBuilder.homeGraph(appController: TrelloController) {
                     appController.navigateToTop(AuthScreenDestination.CreateOrSelectOrganisationScreen)
                 },
                 navigateToKanban = { boardId, boardTitle ->
-                    // Reserved for future Kanban board navigation
+                    appController.navigate(
+                        UserScreenDestination.KanbanScreen(
+                            boardId = boardId,
+                            boardTitle = boardTitle
+                        )
+                    )
+                }
+            )
+        }
+        composable<UserScreenDestination.KanbanScreen> { backStackEntry ->
+            val kanbanScreen = backStackEntry.toRoute<UserScreenDestination.KanbanScreen>()
+            KanbanRoot(
+                boardId = kanbanScreen.boardId,
+                boardTitle = kanbanScreen.boardTitle,
+                navigateBack = {
+                    appController.upPress()
+                },
+                navigateToSwitchBoard = {
+                    appController.navigateToTop(AuthScreenDestination.CreateOrSelectOrganisationScreen)
                 }
             )
         }

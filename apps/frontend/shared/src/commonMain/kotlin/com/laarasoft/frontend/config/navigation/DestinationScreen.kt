@@ -27,5 +27,8 @@ sealed interface UserScreenDestination {
         val orgName: String = ""
     ) : UserScreenDestination
     @Serializable
-    data object KanbanScreen : UserScreenDestination
+    data class KanbanScreen(
+        val boardId: String = "",
+        val boardTitle: String = ""
+    ) : UserScreenDestination
 }
