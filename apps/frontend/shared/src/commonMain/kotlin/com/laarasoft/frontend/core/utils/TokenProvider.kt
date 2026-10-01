@@ -3,16 +3,20 @@ package com.laarasoft.frontend.core.utils
 import com.laarasoft.frontend.config.datastore.DataStoreRepository
 
 class TokenProvider(
-    private val dataStoreRepository: DataStoreRepository,
+    private val dataStoreRepository: DataStoreRepository? = null,
 ) {
+    private var inMemoryToken: String? = null
+
     suspend fun getAccessToken(): String? =
-        dataStoreRepository.getToken()
+        dataStoreRepository?.getToken() ?: inMemoryToken
 
     suspend fun updateAccessToken(token: String) {
-        dataStoreRepository.saveToken(token)
+        inMemoryToken = token
+        dataStoreRepository?.saveToken(token)
     }
 
     suspend fun clearToken() {
-        dataStoreRepository.clearTokens()
+        inMemoryToken = null
+        dataStoreRepository?.clearTokens()
     }
 }

@@ -1,7 +1,5 @@
 package com.laarasoft.frontend.config.navigation
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
@@ -15,20 +13,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.laarasoft.frontend.core.utils.ObserveAsEvents
-import com.laarasoft.frontend.core.utils.ui.AppDialog
 import com.laarasoft.frontend.core.utils.ui.DialogButtonStyle
 import com.laarasoft.frontend.core.utils.ui.UiEvent
 import com.laarasoft.frontend.core.utils.ui.UiEventController
 import com.laarasoft.frontend.features.auth.presentation.login.LoginRoot
 import com.laarasoft.frontend.features.auth.presentation.signup.SignupRoot
+import com.laarasoft.frontend.features.organisation.presentation.CreateOrSelectOrgRoot
 import com.laarasoft.frontend.features.home.presentation.HomeRoot
-import com.laarasoft.frontend.features.home.presentation.HomeScreen
 import com.laarasoft.frontend.features.splash.presentation.SplashRoot
 import kotlinx.coroutines.launch
 
@@ -104,10 +100,10 @@ fun AppNavigation() {
             composable<AuthScreenDestination.SplashScreen> {
                 SplashRoot(
                     navigateToAuth = {
-                        appController.navigate(it)
+                        appController.navigateToTop(MainGraph.AuthGraph)
                     },
-                    navigateToHome = {
-                        appController.navigate(it)
+                    navigateToOrganisations = {
+                        appController.navigateToTop(AuthScreenDestination.CreateOrSelectOrganisationScreen)
                     }
                 )
             }
@@ -123,16 +119,23 @@ private fun NavGraphBuilder.authGraph(appController: TrelloController) {
     ) {
         composable<AuthScreenDestination.LoginScreen> {
             LoginRoot(
-                navigateToSignup = {
-                    appController.navigate(it)
-                }
+                navigateToSignup =
+                    appController::navigate,
+                navigateToOrganisations =
+                    appController::navigate
             )
         }
         composable<AuthScreenDestination.SignupScreen> {
             SignupRoot(
                 navigateToLogin = {
                     appController.upPress()
-                }
+                },
+                navigateToOrganisations = appController::navigate
+            )
+        }
+        composable<AuthScreenDestination.CreateOrSelectOrganisationScreen> {
+            CreateOrSelectOrgRoot(
+                navigateToHome = appController::navigateToTop
             )
         }
     }

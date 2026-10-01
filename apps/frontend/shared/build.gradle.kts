@@ -48,8 +48,6 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
             implementation(libs.ktor.client.okhttp)
-            implementation(libs.koin.android)
-            implementation(libs.koin.androidx.compose)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -60,6 +58,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.material.icons.extended)
 
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
@@ -78,7 +77,10 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
-        iosMain.dependencies {
+        jvmMain.dependencies {
+            implementation(libs.ktor.client.okhttp)
+        }
+        nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)
         }
     }

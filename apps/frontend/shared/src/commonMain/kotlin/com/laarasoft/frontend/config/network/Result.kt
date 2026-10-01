@@ -79,20 +79,19 @@ suspend inline fun <T> Result<T, DataError.Remote>.sendSnackbarOnError(
         is Result.Error -> {
 
             if (error.type == DataError.Remote.Type.UNAUTHORIZED && !skipAuth) {
-//                UiEventController.send(
-//                    UiEvent.SessionExpired
-//                )
+                UiEventController.send(UiEvent.SessionExpired)
             } else {
                 val msg = when (error.type) {
                     DataError.Remote.Type.NO_INTERNET -> "Weak or no Internet connection"
                     DataError.Remote.Type.REQUEST_TIMEOUT -> "Request timed out"
+                    DataError.Remote.Type.UNAUTHORIZED -> error.message ?: "Invalid username or password"
+                    DataError.Remote.Type.CONFLICT -> error.message ?: "Username already exists"
+                    DataError.Remote.Type.BAD_REQUEST -> error.message ?: "Invalid request"
                     DataError.Remote.Type.UNKNOWN -> error.message ?: "Something went wrong"
                     DataError.Remote.Type.PERMISSION_DENIED -> "Location Permission is Required"
                     DataError.Remote.Type.LOCATION_UNAVAILABLE -> error.message
-                    DataError.Remote.Type.SERVER_ERROR -> "Something Went Error"
-                    else -> {
-                        null
-                    }
+                    DataError.Remote.Type.SERVER_ERROR -> "Server error, please try again later"
+                    else -> error.message
                 }
                 msg?.let {
                     UiEventController.send(

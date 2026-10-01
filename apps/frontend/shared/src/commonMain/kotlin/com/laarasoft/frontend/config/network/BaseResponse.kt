@@ -110,7 +110,27 @@ suspend inline fun <reified T> responseToResult(
                 )
             }
         }
-        409 -> Result.Error(DataError.Remote(DataError.Remote.Type.CONFLICT))
+        409 -> {
+            try {
+                val errorText = response.bodyAsText()
+                val json = Json {
+                    ignoreUnknownKeys = true
+                    explicitNulls = false
+                    isLenient = true
+                    prettyPrint = true
+                    coerceInputValues = true
+                }
+                val parsed = json.decodeFromString<BaseResponse<kotlinx.serialization.json.JsonElement>>(errorText)
+                Result.Error(
+                    DataError.Remote(
+                        type = DataError.Remote.Type.CONFLICT,
+                        message = parsed.message
+                    )
+                )
+            } catch (e: Exception) {
+                Result.Error(DataError.Remote(DataError.Remote.Type.CONFLICT, message = "Conflict"))
+            }
+        }
         429 -> Result.Error(DataError.Remote(DataError.Remote.Type.TOO_MANY_REQUESTS))
         in 500..599 -> Result.Error(DataError.Remote(DataError.Remote.Type.SERVER_ERROR))
 

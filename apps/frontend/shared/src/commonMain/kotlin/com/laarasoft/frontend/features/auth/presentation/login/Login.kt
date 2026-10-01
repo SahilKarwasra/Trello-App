@@ -10,10 +10,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -30,7 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.laarasoft.frontend.config.navigation.AuthScreenDestination
-import com.laarasoft.frontend.config.navigation.UserScreenDestination
+import com.laarasoft.frontend.config.navigation.MainGraph
 import com.laarasoft.frontend.core.theme.TrelloTheme
 import com.laarasoft.frontend.core.utils.ObserveAsEvents
 import org.koin.compose.viewmodel.koinViewModel
@@ -39,14 +41,14 @@ import org.koin.compose.viewmodel.koinViewModel
 fun LoginRoot(
     viewModel: LoginViewModel = koinViewModel(),
     navigateToSignup: (AuthScreenDestination) -> Unit,
-    navigateToHome: (UserScreenDestination) -> Unit = {}
+    navigateToOrganisations: (AuthScreenDestination) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             is LoginEvents.NavigateToSignup -> navigateToSignup(event.destination)
-            is LoginEvents.NavigateToHome -> navigateToHome(event.destination)
+            is LoginEvents.NavigateToOrganisations -> navigateToOrganisations(event.destination)
         }
     }
 
@@ -118,6 +120,7 @@ fun LoginScreen(
                     label = { Text("Username") },
                     placeholder = { Text("Enter your username") },
                     singleLine = true,
+                    enabled = !state.isLoading,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -130,9 +133,13 @@ fun LoginScreen(
                     label = { Text("Password") },
                     placeholder = { Text("Enter your password") },
                     singleLine = true,
+                    enabled = !state.isLoading,
                     visualTransformation = if (state.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
-                        TextButton(onClick = { onAction(LoginAction.OnTogglePasswordVisibility) }) {
+                        TextButton(
+                            onClick = { onAction(LoginAction.OnTogglePasswordVisibility) },
+                            enabled = !state.isLoading
+                        ) {
                             Text(
                                 text = if (state.isPasswordVisible) "Hide" else "Show",
                                 style = MaterialTheme.typography.labelMedium
@@ -143,19 +150,37 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
+                if (state.errorMessage != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = state.errorMessage,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
                     onClick = { onAction(LoginAction.OnSubmit) },
+                    enabled = !state.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(
-                        text = "Sign In",
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = "Sign In",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -169,7 +194,10 @@ fun LoginScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    TextButton(onClick = { onAction(LoginAction.OnNavigateToSignup) }) {
+                    TextButton(
+                        onClick = { onAction(LoginAction.OnNavigateToSignup) },
+                        enabled = !state.isLoading
+                    ) {
                         Text(
                             text = "Sign Up",
                             style = MaterialTheme.typography.bodyMedium,

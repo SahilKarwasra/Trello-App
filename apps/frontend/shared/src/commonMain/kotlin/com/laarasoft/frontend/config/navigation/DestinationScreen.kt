@@ -15,7 +15,7 @@ sealed interface AuthScreenDestination {
     @Serializable
     data object SignupScreen: AuthScreenDestination
     @Serializable
-    data object CreateOrganisationScreen: AuthScreenDestination
+    data object CreateOrSelectOrganisationScreen: AuthScreenDestination
     @Serializable
     data object SplashScreen: AuthScreenDestination
 }

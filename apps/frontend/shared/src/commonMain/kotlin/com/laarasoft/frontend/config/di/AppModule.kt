@@ -1,11 +1,22 @@
 package com.laarasoft.frontend.config.di
 
 import com.laarasoft.frontend.core.utils.TokenProvider
+import com.laarasoft.frontend.config.datastore.DataStoreRepository
+import com.laarasoft.frontend.features.auth.domain.api.AuthApi
+import com.laarasoft.frontend.features.auth.data.api.AuthApiImpl
+import com.laarasoft.frontend.features.auth.data.repository.AuthRepositoryImpl
+import com.laarasoft.frontend.features.auth.domain.repository.AuthRepository
 import com.laarasoft.frontend.features.auth.presentation.login.LoginViewModel
 import com.laarasoft.frontend.features.auth.presentation.signup.SignupViewModel
+import com.laarasoft.frontend.features.organisation.presentation.CreateOrSelectOrgViewModel
 import com.laarasoft.frontend.features.home.presentation.HomeViewModel
+import com.laarasoft.frontend.features.organisation.data.api.OrganisationApiImpl
+import com.laarasoft.frontend.features.organisation.data.repository.OrganisationRepositoryImpl
+import com.laarasoft.frontend.features.organisation.domain.api.OrganisationApi
+import com.laarasoft.frontend.features.organisation.domain.repository.OrganisationRepository
 import com.laarasoft.frontend.features.splash.presentation.SplashViewModel
 import io.ktor.client.HttpClient
+import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
@@ -21,6 +32,7 @@ import kotlinx.serialization.json.Json
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 expect val platformModule: Module
@@ -28,10 +40,13 @@ expect val platformModule: Module
 val sharedModules = module {
     includes(platformModule)
 
+    singleOf(::DataStoreRepository)
     singleOf(::TokenProvider)
+
     single<HttpClient> {
         val tokenProvider: TokenProvider = get()
-        HttpClient(get<HttpClientEngine>()) {
+        val engine = getOrNull<HttpClientEngine>()
+        val config: HttpClientConfig<*>.() -> Unit = {
             install(ContentNegotiation) {
                 json(Json {
                     isLenient = true
@@ -54,10 +69,21 @@ val sharedModules = module {
                 }
             }
         }
+        if (engine != null) HttpClient(engine, config) else HttpClient(config)
     }
+
+    singleOf(::AuthApiImpl).bind<AuthApi>()
+    singleOf(::AuthRepositoryImpl).bind<AuthRepository>()
+
+    singleOf(::OrganisationApiImpl).bind<OrganisationApi>()
+    singleOf(::OrganisationRepositoryImpl).bind<OrganisationRepository>()
+
     viewModelOf(::SplashViewModel)
     viewModelOf(::LoginViewModel)
     viewModelOf(::SignupViewModel)
+    viewModelOf(::CreateOrSelectOrgViewModel)
     viewModelOf(::HomeViewModel)
-}
 
+
+
+}
