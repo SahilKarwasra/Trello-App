@@ -17,6 +17,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import androidx.navigation.toRoute
 import com.laarasoft.frontend.core.utils.ObserveAsEvents
 import com.laarasoft.frontend.core.utils.ui.DialogButtonStyle
 import com.laarasoft.frontend.core.utils.ui.UiEvent
@@ -143,10 +144,20 @@ private fun NavGraphBuilder.authGraph(appController: TrelloController) {
 
 private fun NavGraphBuilder.homeGraph(appController: TrelloController) {
     navigation<MainGraph.HomeGraph>(
-        startDestination = UserScreenDestination.HomeScreen
+        startDestination = UserScreenDestination.HomeScreen()
     ) {
-        composable<UserScreenDestination.HomeScreen> {
-            HomeRoot()
+        composable<UserScreenDestination.HomeScreen> { backStackEntry ->
+            val homeScreen = backStackEntry.toRoute<UserScreenDestination.HomeScreen>()
+            HomeRoot(
+                orgId = homeScreen.orgId,
+                orgName = homeScreen.orgName,
+                navigateToChangeOrg = {
+                    appController.navigateToTop(AuthScreenDestination.CreateOrSelectOrganisationScreen)
+                },
+                navigateToKanban = { boardId, boardTitle ->
+                    // Reserved for future Kanban board navigation
+                }
+            )
         }
     }
 }

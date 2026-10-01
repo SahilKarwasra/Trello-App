@@ -5,6 +5,8 @@ import com.laarasoft.frontend.config.network.Endpoints
 import com.laarasoft.frontend.config.network.Result
 import com.laarasoft.frontend.config.network.safeCall
 import com.laarasoft.frontend.features.organisation.data.dto.CreateOrgRequestDto
+import com.laarasoft.frontend.features.organisation.data.dto.InviteMemberRequestDto
+import com.laarasoft.frontend.features.organisation.data.dto.InviteMemberResponseDto
 import com.laarasoft.frontend.features.organisation.data.dto.OrganisationDto
 import com.laarasoft.frontend.features.organisation.domain.api.OrganisationApi
 import io.ktor.client.HttpClient
@@ -27,6 +29,15 @@ class OrganisationApiImpl(
     override suspend fun createOrganisation(request: CreateOrgRequestDto): Result<OrganisationDto, DataError.Remote> {
         return safeCall<OrganisationDto> {
             httpClient.post(Endpoints.ORGANISATIONS) {
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+        }
+    }
+
+    override suspend fun inviteMember(request: InviteMemberRequestDto): Result<InviteMemberResponseDto, DataError.Remote> {
+        return safeCall<InviteMemberResponseDto> {
+            httpClient.post(Endpoints.INVITE) {
                 contentType(ContentType.Application.Json)
                 setBody(request)
             }

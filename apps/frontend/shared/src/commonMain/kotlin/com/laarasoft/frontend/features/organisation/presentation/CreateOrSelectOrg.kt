@@ -39,7 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.laarasoft.frontend.config.navigation.MainGraph
+import com.laarasoft.frontend.config.navigation.UserScreenDestination
 import com.laarasoft.frontend.core.theme.TrelloTheme
 import com.laarasoft.frontend.core.utils.ObserveAsEvents
 import com.laarasoft.frontend.features.organisation.domain.model.Organisation
@@ -48,14 +48,21 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun CreateOrSelectOrgRoot(
     viewModel: CreateOrSelectOrgViewModel = koinViewModel(),
-    navigateToHome: (MainGraph) -> Unit = {}
+    navigateToHome: (UserScreenDestination.HomeScreen) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             is CreateOrSelectOrgEvents.NavigateToHome -> navigateToHome(event.destination)
-            is CreateOrSelectOrgEvents.OrgCreated -> { /* already handled in state */ }
+            is CreateOrSelectOrgEvents.OrgCreated -> {
+                navigateToHome(
+                    UserScreenDestination.HomeScreen(
+                        orgId = event.organisation.id,
+                        orgName = event.organisation.title
+                    )
+                )
+            }
         }
     }
 

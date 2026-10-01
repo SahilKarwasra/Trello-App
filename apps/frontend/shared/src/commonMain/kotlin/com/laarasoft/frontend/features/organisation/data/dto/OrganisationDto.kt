@@ -28,3 +28,22 @@ fun OrganisationDto.toDomain(): Organisation = Organisation(
     createdAt = createdAt,
     updatedAt = updatedAt
 )
+
+@Serializable
+data class InviteMemberRequestDto(
+    val username: String,
+    @SerialName("organization_id")
+    val organisationId: String
+)
+
+@Serializable
+data class InviteMemberResponseDto(
+    val id: String? = null,
+    val user: String? = null,
+    @SerialName("organization_id")
+    val organisationId: String? = null,
+    val role: String? = null,
+    val accepted: Boolean = false,
+    @SerialName("created_at")
+    val createdAt: String? = null
+)

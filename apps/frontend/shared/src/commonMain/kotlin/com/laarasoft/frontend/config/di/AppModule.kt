@@ -14,6 +14,10 @@ import com.laarasoft.frontend.features.organisation.data.api.OrganisationApiImpl
 import com.laarasoft.frontend.features.organisation.data.repository.OrganisationRepositoryImpl
 import com.laarasoft.frontend.features.organisation.domain.api.OrganisationApi
 import com.laarasoft.frontend.features.organisation.domain.repository.OrganisationRepository
+import com.laarasoft.frontend.features.board.data.api.BoardApiImpl
+import com.laarasoft.frontend.features.board.data.repository.BoardRepositoryImpl
+import com.laarasoft.frontend.features.board.domain.api.BoardApi
+import com.laarasoft.frontend.features.board.domain.repository.BoardRepository
 import com.laarasoft.frontend.features.splash.presentation.SplashViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
@@ -77,6 +81,9 @@ val sharedModules = module {
 
     singleOf(::OrganisationApiImpl).bind<OrganisationApi>()
     singleOf(::OrganisationRepositoryImpl).bind<OrganisationRepository>()
+
+    singleOf(::BoardApiImpl).bind<BoardApi>()
+    singleOf(::BoardRepositoryImpl).bind<BoardRepository>()
 
     viewModelOf(::SplashViewModel)
     viewModelOf(::LoginViewModel)

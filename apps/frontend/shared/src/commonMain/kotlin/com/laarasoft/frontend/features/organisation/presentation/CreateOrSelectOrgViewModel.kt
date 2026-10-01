@@ -2,6 +2,7 @@ package com.laarasoft.frontend.features.organisation.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.laarasoft.frontend.config.navigation.UserScreenDestination
 import com.laarasoft.frontend.config.network.onError
 import com.laarasoft.frontend.config.network.onSuccess
 import com.laarasoft.frontend.config.network.sendSnackbarOnError
@@ -63,7 +64,14 @@ class CreateOrSelectOrgViewModel(
 
             is CreateOrSelectOrgAction.OnSelectOrg -> {
                 viewModelScope.launch {
-                    _events.send(CreateOrSelectOrgEvents.NavigateToHome())
+                    _events.send(
+                        CreateOrSelectOrgEvents.NavigateToHome(
+                            UserScreenDestination.HomeScreen(
+                                orgId = action.organisation.id,
+                                orgName = action.organisation.title
+                            )
+                        )
+                    )
                 }
             }
         }

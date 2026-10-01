@@ -2,8 +2,10 @@ package com.laarasoft.frontend.features.organisation.data.repository
 
 import com.laarasoft.frontend.config.network.DataError
 import com.laarasoft.frontend.config.network.Result
+import com.laarasoft.frontend.config.network.asEmptyDataResult
 import com.laarasoft.frontend.config.network.map
 import com.laarasoft.frontend.features.organisation.data.dto.CreateOrgRequestDto
+import com.laarasoft.frontend.features.organisation.data.dto.InviteMemberRequestDto
 import com.laarasoft.frontend.features.organisation.data.dto.toDomain
 import com.laarasoft.frontend.features.organisation.domain.api.OrganisationApi
 import com.laarasoft.frontend.features.organisation.domain.model.Organisation
@@ -26,5 +28,14 @@ class OrganisationRepositoryImpl(
         return organisationApi.createOrganisation(
             CreateOrgRequestDto(title = title, description = description)
         ).map { it.toDomain() }
+    }
+
+    override suspend fun inviteMember(
+        orgId: String,
+        username: String
+    ): Result<Unit, DataError.Remote> {
+        return organisationApi.inviteMember(
+            InviteMemberRequestDto(username = username, organisationId = orgId)
+        ).asEmptyDataResult()
     }
 }

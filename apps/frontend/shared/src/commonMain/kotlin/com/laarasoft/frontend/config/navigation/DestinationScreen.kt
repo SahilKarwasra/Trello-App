@@ -22,7 +22,10 @@ sealed interface AuthScreenDestination {
 
 sealed interface UserScreenDestination {
     @Serializable
-    data object HomeScreen : UserScreenDestination
+    data class HomeScreen(
+        val orgId: String = "",
+        val orgName: String = ""
+    ) : UserScreenDestination
     @Serializable
     data object KanbanScreen : UserScreenDestination
 }
