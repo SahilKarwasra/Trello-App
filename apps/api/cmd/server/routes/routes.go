@@ -16,6 +16,7 @@ func SetupRouter(
 	boardHandler *handler.BoardHandler,
 	sectionHandler *handler.SectionHandler,
 	issueHandler *handler.IssueHandler,
+	wsHandler *handler.WSHandler,
 ) *gin.Engine {
 	engine := gin.Default()
 
@@ -35,6 +36,9 @@ func SetupRouter(
 			auth.POST("/sign-up", authHandler.SignUp)
 			auth.POST("/sign-in", authHandler.SignIn)
 		}
+
+		// Real-time WebSocket connection (authenticates via ?token= query param or Bearer header)
+		api.GET("/ws", wsHandler.ServeWS)
 
 		// Protected routes (Requires Bearer JWT token)
 		protected := api.Group("")

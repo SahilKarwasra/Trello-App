@@ -54,7 +54,7 @@ func (h *IssueHandler) DeleteIssue(c *gin.Context) {
 		return
 	}
 
-	_, ok := val.(uuid.UUID)
+	userID, ok := val.(uuid.UUID)
 	if !ok {
 		utils.Unauthorized(c, "invalid user id in context")
 		return
@@ -68,7 +68,7 @@ func (h *IssueHandler) DeleteIssue(c *gin.Context) {
 		}
 	}
 
-	if err := h.issueService.DeleteIssue(c.Request.Context(), req); err != nil {
+	if err := h.issueService.DeleteIssue(c.Request.Context(), userID, req); err != nil {
 		utils.InternalServerError(c, err.Error())
 		return
 	}

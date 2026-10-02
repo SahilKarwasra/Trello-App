@@ -26,7 +26,7 @@ func (h *SectionHandler) CreateSection(c *gin.Context) {
 		return
 	}
 
-	_, ok := val.(uuid.UUID)
+	userID, ok := val.(uuid.UUID)
 	if !ok {
 		utils.Unauthorized(c, "invalid user id in context")
 		return
@@ -38,7 +38,7 @@ func (h *SectionHandler) CreateSection(c *gin.Context) {
 		return
 	}
 
-	res, err := h.sectionService.CreateSection(c.Request.Context(), req)
+	res, err := h.sectionService.CreateSection(c.Request.Context(), userID, req)
 	if err != nil {
 		utils.InternalServerError(c, err.Error())
 		return
@@ -76,6 +76,7 @@ func (h *SectionHandler) GetSections(c *gin.Context) {
 
 	utils.Success(c, http.StatusOK, "Sections fetched successfully", res)
 }
+
 func (h *SectionHandler) UpdateSection(c *gin.Context) {
 	val, exists := c.Get("userID")
 	if !exists {
@@ -83,7 +84,7 @@ func (h *SectionHandler) UpdateSection(c *gin.Context) {
 		return
 	}
 
-	_, ok := val.(uuid.UUID)
+	userID, ok := val.(uuid.UUID)
 	if !ok {
 		utils.Unauthorized(c, "invalid user id in context")
 		return
@@ -95,7 +96,7 @@ func (h *SectionHandler) UpdateSection(c *gin.Context) {
 		return
 	}
 
-	res, err := h.sectionService.UpdateSection(c.Request.Context(), req)
+	res, err := h.sectionService.UpdateSection(c.Request.Context(), userID, req)
 	if err != nil {
 		utils.InternalServerError(c, err.Error())
 		return
@@ -111,7 +112,7 @@ func (h *SectionHandler) MoveSection(c *gin.Context) {
 		return
 	}
 
-	_, ok := val.(uuid.UUID)
+	userID, ok := val.(uuid.UUID)
 	if !ok {
 		utils.Unauthorized(c, "invalid user id in context")
 		return
@@ -123,7 +124,7 @@ func (h *SectionHandler) MoveSection(c *gin.Context) {
 		return
 	}
 
-	res, err := h.sectionService.MoveSection(c.Request.Context(), req)
+	res, err := h.sectionService.MoveSection(c.Request.Context(), userID, req)
 	if err != nil {
 		utils.InternalServerError(c, err.Error())
 		return
@@ -139,7 +140,7 @@ func (h *SectionHandler) DeleteSection(c *gin.Context) {
 		return
 	}
 
-	_, ok := val.(uuid.UUID)
+	userID, ok := val.(uuid.UUID)
 	if !ok {
 		utils.Unauthorized(c, "invalid user id in context")
 		return
@@ -153,11 +154,10 @@ func (h *SectionHandler) DeleteSection(c *gin.Context) {
 		}
 	}
 
-	if err := h.sectionService.DeleteSection(c.Request.Context(), req); err != nil {
+	if err := h.sectionService.DeleteSection(c.Request.Context(), userID, req); err != nil {
 		utils.InternalServerError(c, err.Error())
 		return
 	}
 
 	utils.Success(c, http.StatusOK, "Section deleted successfully", nil)
 }
-

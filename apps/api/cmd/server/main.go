@@ -5,6 +5,7 @@ import (
 	"api/cmd/server/repository"
 	"api/cmd/server/routes"
 	"api/cmd/server/services"
+	"api/cmd/server/websockets"
 	"config"
 	"database"
 	"log"
@@ -22,6 +23,11 @@ func main() {
 	}
 	log.Println("Connected to database")
 
+	// Real-time WebSocket Hub
+	hub := websockets.NewHub()
+	go hub.Run()
+	log.Println("WebSocket Hub started")
+
 	// Repositories
 	userRepo := repository.NewUserRepository(db)
 	orgRepo := repository.NewOrganisationRepository(db)
@@ -33,8 +39,8 @@ func main() {
 	authService := services.NewAuthService(userRepo, cfg.JwtSecret)
 	orgService := services.NewOrganisationService(orgRepo, userRepo)
 	boardService := services.NewBoardService(boardRepo)
-	sectionService := services.NewSectionService(sectionRepo, issueRepo)
-	issueService := services.NewIssueService(issueRepo)
+	sectionService := services.NewSectionService(sectionRepo, issueRepo, hub)
+	issueService := services.NewIssueService(issueRepo, sectionRepo, hub)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
@@ -42,11 +48,12 @@ func main() {
 	boardHandler := handler.NewBoardHandler(boardService)
 	sectionHandler := handler.NewSectionHandler(sectionService)
 	issueHandler := handler.NewIssueHandler(issueService)
+	wsHandler := handler.NewWSHandler(hub, cfg.JwtSecret)
 
 	// Router
-	router := routes.SetupRouter(cfg.JwtSecret, authHandler, orgHandler, boardHandler, sectionHandler, issueHandler)
+	router := routes.SetupRouter(cfg.JwtSecret, authHandler, orgHandler, boardHandler, sectionHandler, issueHandler, wsHandler)
 
-	log.Println("Starting HTTP server on :8080...")
+	log.Println("Starting HTTP & WebSocket server on :8080...")
 	if err := router.Run(":8080"); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}

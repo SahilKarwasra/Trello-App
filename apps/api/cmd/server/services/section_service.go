@@ -2,6 +2,7 @@ package services
 
 import (
 	"api/cmd/server/repository"
+	"api/cmd/server/websockets"
 	"context"
 	"database/models"
 	"fmt"
@@ -12,12 +13,18 @@ import (
 type SectionService struct {
 	sectionRepo repository.SectionRepository
 	issueRepo   repository.IssueRepository
+	broadcaster websockets.Broadcaster
 }
 
-func NewSectionService(sectionRepo repository.SectionRepository, issueRepo repository.IssueRepository) *SectionService {
+func NewSectionService(
+	sectionRepo repository.SectionRepository,
+	issueRepo repository.IssueRepository,
+	broadcaster websockets.Broadcaster,
+) *SectionService {
 	return &SectionService{
 		sectionRepo: sectionRepo,
 		issueRepo:   issueRepo,
+		broadcaster: broadcaster,
 	}
 }
 
@@ -67,7 +74,7 @@ func (s *SectionService) GetSections(ctx context.Context, req GetSectionsRequest
 	return res, nil
 }
 
-func (s *SectionService) CreateSection(ctx context.Context, req CreateSectionRequest) (*SectionResponse, error) {
+func (s *SectionService) CreateSection(ctx context.Context, actorID uuid.UUID, req CreateSectionRequest) (*SectionResponse, error) {
 	section := models.Section{
 		ID:       uuid.New(),
 		Title:    req.Title,
@@ -77,17 +84,24 @@ func (s *SectionService) CreateSection(ctx context.Context, req CreateSectionReq
 	if err := s.sectionRepo.CreateSection(ctx, &section); err != nil {
 		return nil, fmt.Errorf("failed to create section: %w", err)
 	}
-	return &SectionResponse{
+
+	res := &SectionResponse{
 		ID:        section.ID,
 		Title:     section.Title,
 		BoardID:   section.BoardID,
 		Position:  section.Position,
 		CreatedAt: section.CreatedAt,
 		UpdatedAt: section.UpdatedAt,
-	}, nil
+	}
+
+	if s.broadcaster != nil {
+		s.broadcaster.Broadcast(res.BoardID, actorID, websockets.EventSectionCreated, res)
+	}
+
+	return res, nil
 }
 
-func (s *SectionService) UpdateSection(ctx context.Context, req UpdateSectionRequest) (*SectionResponse, error) {
+func (s *SectionService) UpdateSection(ctx context.Context, actorID uuid.UUID, req UpdateSectionRequest) (*SectionResponse, error) {
 	sectionID, err := uuid.Parse(req.SectionID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid section ID: %w", err)
@@ -104,17 +118,23 @@ func (s *SectionService) UpdateSection(ctx context.Context, req UpdateSectionReq
 		return nil, fmt.Errorf("failed to update section: %w", err)
 	}
 
-	return &SectionResponse{
+	res := &SectionResponse{
 		ID:        section.ID,
 		Title:     section.Title,
 		BoardID:   section.BoardID,
 		Position:  section.Position,
 		CreatedAt: section.CreatedAt,
 		UpdatedAt: section.UpdatedAt,
-	}, nil
+	}
+
+	if s.broadcaster != nil {
+		s.broadcaster.Broadcast(res.BoardID, actorID, websockets.EventSectionUpdated, res)
+	}
+
+	return res, nil
 }
 
-func (s *SectionService) MoveSection(ctx context.Context, req MoveSectionRequest) (*SectionResponse, error) {
+func (s *SectionService) MoveSection(ctx context.Context, actorID uuid.UUID, req MoveSectionRequest) (*SectionResponse, error) {
 	sectionUUID, err := uuid.Parse(req.SectionID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid section ID: %w", err)
@@ -125,27 +145,45 @@ func (s *SectionService) MoveSection(ctx context.Context, req MoveSectionRequest
 		return nil, fmt.Errorf("failed to move section: %w", err)
 	}
 
-	return &SectionResponse{
+	res := &SectionResponse{
 		ID:        updatedSection.ID,
 		Title:     updatedSection.Title,
 		BoardID:   updatedSection.BoardID,
 		Position:  updatedSection.Position,
 		CreatedAt: updatedSection.CreatedAt,
 		UpdatedAt: updatedSection.UpdatedAt,
-	}, nil
+	}
+
+	if s.broadcaster != nil {
+		s.broadcaster.Broadcast(res.BoardID, actorID, websockets.EventSectionMoved, res)
+	}
+
+	return res, nil
 }
 
-func (s *SectionService) DeleteSection(ctx context.Context, req DeleteSectionRequest) error {
+func (s *SectionService) DeleteSection(ctx context.Context, actorID uuid.UUID, req DeleteSectionRequest) error {
 	sectionUUID, err := uuid.Parse(req.SectionID)
 	if err != nil {
 		return fmt.Errorf("invalid section ID: %w", err)
 	}
 
+	section, err := s.sectionRepo.FindByID(ctx, sectionUUID)
+	if err != nil {
+		return fmt.Errorf("section not found: %w", err)
+	}
+
+	boardID := section.BoardID
+
 	if err := s.sectionRepo.DeleteSection(ctx, sectionUUID); err != nil {
 		return fmt.Errorf("failed to delete section: %w", err)
 	}
 
+	if s.broadcaster != nil {
+		s.broadcaster.Broadcast(boardID, actorID, websockets.EventSectionDeleted, map[string]string{
+			"section_id": req.SectionID,
+			"board_id":   boardID,
+		})
+	}
+
 	return nil
 }
-
-

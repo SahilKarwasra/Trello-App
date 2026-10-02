@@ -64,6 +64,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.milliseconds
 
 // ── Root composable ───────────────────────────────────────────────────────────
 
@@ -113,7 +114,7 @@ fun KanbanScreen(
                 if (delta != 0f) {
                     scrollState.scrollBy(delta)
                 }
-                delay(16)
+                delay(16.milliseconds)
             }
         }
     }

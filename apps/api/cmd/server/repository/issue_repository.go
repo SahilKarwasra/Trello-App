@@ -12,6 +12,7 @@ import (
 type IssueRepository interface {
 	CreateIssue(ctx context.Context, issue *models.Issue) error
 	GetIssuesByBoardID(ctx context.Context, boardID string) ([]models.Issue, error)
+	FindByID(ctx context.Context, issueID uuid.UUID) (*models.Issue, error)
 	MoveIssue(ctx context.Context, issueID uuid.UUID, newSectionID string, newPosition int) (*models.Issue, error)
 	DeleteIssue(ctx context.Context, issueID uuid.UUID) error
 }
@@ -24,6 +25,14 @@ func NewIssueRepository(db *gorm.DB) IssueRepository {
 	return &issueRepository{
 		db: db,
 	}
+}
+
+func (r *issueRepository) FindByID(ctx context.Context, issueID uuid.UUID) (*models.Issue, error) {
+	var issue models.Issue
+	if err := r.db.WithContext(ctx).Where("id = ?", issueID).First(&issue).Error; err != nil {
+		return nil, err
+	}
+	return &issue, nil
 }
 
 func (r *issueRepository) GetIssuesByBoardID(ctx context.Context, boardID string) ([]models.Issue, error) {
