@@ -1,13 +1,13 @@
-package com.laarasoft.frontend.features.board.data.repository
+package com.laarasoft.frontend.features.home.data.repository
 
 import com.laarasoft.frontend.config.network.DataError
 import com.laarasoft.frontend.config.network.Result
 import com.laarasoft.frontend.config.network.map
-import com.laarasoft.frontend.features.board.data.dto.CreateBoardRequestDto
-import com.laarasoft.frontend.features.board.data.dto.toDomain
-import com.laarasoft.frontend.features.board.domain.api.BoardApi
-import com.laarasoft.frontend.features.board.domain.model.Board
-import com.laarasoft.frontend.features.board.domain.repository.BoardRepository
+import com.laarasoft.frontend.features.home.data.dto.CreateBoardRequestDto
+import com.laarasoft.frontend.features.home.data.dto.toDomain
+import com.laarasoft.frontend.features.home.domain.api.BoardApi
+import com.laarasoft.frontend.features.home.domain.model.Board
+import com.laarasoft.frontend.features.home.domain.repository.BoardRepository
 
 class BoardRepositoryImpl(
     private val boardApi: BoardApi

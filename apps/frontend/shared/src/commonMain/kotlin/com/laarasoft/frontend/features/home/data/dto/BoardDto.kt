@@ -1,6 +1,6 @@
-package com.laarasoft.frontend.features.board.data.dto
+package com.laarasoft.frontend.features.home.data.dto
 
-import com.laarasoft.frontend.features.board.domain.model.Board
+import com.laarasoft.frontend.features.home.domain.model.Board
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

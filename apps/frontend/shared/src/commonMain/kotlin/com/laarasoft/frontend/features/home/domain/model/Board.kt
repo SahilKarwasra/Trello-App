@@ -1,4 +1,4 @@
-package com.laarasoft.frontend.features.board.domain.model
+package com.laarasoft.frontend.features.home.domain.model
 
 data class Board(
     val id: String,

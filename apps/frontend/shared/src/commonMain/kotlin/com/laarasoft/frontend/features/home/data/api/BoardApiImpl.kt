@@ -1,12 +1,12 @@
-package com.laarasoft.frontend.features.board.data.api
+package com.laarasoft.frontend.features.home.data.api
 
 import com.laarasoft.frontend.config.network.DataError
 import com.laarasoft.frontend.config.network.Endpoints
 import com.laarasoft.frontend.config.network.Result
 import com.laarasoft.frontend.config.network.safeCall
-import com.laarasoft.frontend.features.board.data.dto.BoardDto
-import com.laarasoft.frontend.features.board.data.dto.CreateBoardRequestDto
-import com.laarasoft.frontend.features.board.domain.api.BoardApi
+import com.laarasoft.frontend.features.home.data.dto.BoardDto
+import com.laarasoft.frontend.features.home.data.dto.CreateBoardRequestDto
+import com.laarasoft.frontend.features.home.domain.api.BoardApi
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
