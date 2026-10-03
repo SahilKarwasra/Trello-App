@@ -21,7 +21,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -41,6 +43,14 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,6 +59,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -56,12 +67,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.laarasoft.frontend.core.utils.ObserveAsEvents
 import com.laarasoft.frontend.core.utils.ui.shimmer
 import com.laarasoft.frontend.features.kanban.domain.models.Issue
 import com.laarasoft.frontend.features.kanban.domain.models.Section
+import com.laarasoft.frontend.features.websocket.domain.models.BoardEvent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import org.koin.compose.viewmodel.koinViewModel
@@ -137,6 +150,10 @@ fun KanbanScreen(
                 onBackClick = { onAction(KanbanAction.OnBackClick) },
                 onRefreshClick = { onAction(KanbanAction.OnRefresh) },
                 isRefreshing = state.isRefreshing,
+                onlineCount = state.onlineCount,
+                activeUsers = state.activeUsers,
+                showPresencePanel = state.showPresencePanel,
+                onTogglePresencePanel = { onAction(KanbanAction.OnTogglePresencePanel) },
             )
 
             // Board area
@@ -235,14 +252,28 @@ fun KanbanScreen(
 
 // ── Top Bar (Neo-Brutalism) ───────────────────────────────────────────────────
 
+// Palette for avatar circles — cycles through these per user index
+private val avatarColors = listOf(
+    Color(0xFF6C63FF), // violet
+    Color(0xFFFF6B6B), // coral
+    Color(0xFF43D39E), // teal
+    Color(0xFFFFA629), // amber
+    Color(0xFF00B4D8), // sky
+    Color(0xFFE040FB), // purple
+)
+
 @Composable
 private fun KanbanTopBar(
     boardTitle: String,
     isRefreshing: Boolean,
+    onlineCount: Int,
+    activeUsers: List<BoardEvent.UserPresence>,
+    showPresencePanel: Boolean,
     onBackClick: () -> Unit,
     onRefreshClick: () -> Unit,
+    onTogglePresencePanel: () -> Unit,
 ) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
@@ -251,10 +282,12 @@ private fun KanbanTopBar(
                 color = MaterialTheme.colorScheme.onBackground,
                 shape = RoundedCornerShape(0.dp)
             )
-            .padding(horizontal = 8.dp, vertical = 8.dp)
     ) {
+        // ── Main toolbar row ──
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(
@@ -281,6 +314,17 @@ private fun KanbanTopBar(
                 modifier = Modifier.weight(1f)
             )
 
+            // ── Presence avatar cluster (clickable) ──
+            if (onlineCount > 0) {
+                PresenceAvatarCluster(
+                    activeUsers = activeUsers,
+                    onlineCount = onlineCount,
+                    isExpanded = showPresencePanel,
+                    onClick = onTogglePresencePanel,
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+            }
+
             IconButton(
                 onClick = onRefreshClick,
                 modifier = Modifier.size(36.dp)
@@ -300,6 +344,176 @@ private fun KanbanTopBar(
                     )
                 }
             }
+        }
+
+        // ── Expandable online-users panel ──
+        AnimatedVisibility(
+            visible = showPresencePanel,
+            enter = expandVertically(spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn(),
+            exit = shrinkVertically(spring(stiffness = Spring.StiffnessMediumLow)) + fadeOut(),
+        ) {
+            PresencePanel(
+                activeUsers = activeUsers,
+                onlineCount = onlineCount,
+            )
+        }
+    }
+}
+
+// ── Stacked avatar circles ────────────────────────────────────────────────────
+
+@Composable
+private fun PresenceAvatarCluster(
+    activeUsers: List<BoardEvent.UserPresence>,
+    onlineCount: Int,
+    isExpanded: Boolean,
+    onClick: () -> Unit,
+) {
+    val maxVisible = 3
+    val visible = activeUsers.take(maxVisible)
+    val overflow = onlineCount - visible.size
+
+    val scale by animateFloatAsState(
+        targetValue = if (isExpanded) 0.92f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        label = "presence_scale"
+    )
+
+    Row(
+        modifier = Modifier
+            .wrapContentWidth()
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .clip(RoundedCornerShape(20.dp))
+            .border(
+                width = 2.dp,
+                color = MaterialTheme.colorScheme.onBackground,
+                shape = RoundedCornerShape(20.dp)
+            )
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy((-8).dp),
+    ) {
+        visible.forEachIndexed { idx, user ->
+            UserAvatar(
+                username = user.username,
+                color = avatarColors[idx % avatarColors.size],
+                borderColor = MaterialTheme.colorScheme.surfaceVariant,
+            )
+        }
+        if (overflow > 0) {
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = "+$overflow",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 10.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun UserAvatar(
+    username: String,
+    color: Color,
+    borderColor: Color,
+) {
+    val initials = username
+        .split(" ", "_", "-", ".")
+        .take(2)
+        .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+        .joinToString("")
+        .ifEmpty { username.take(1).uppercase() }
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(28.dp)
+            .clip(CircleShape)
+            .background(color, CircleShape)
+            .border(2.dp, borderColor, CircleShape)
+    ) {
+        Text(
+            text = initials,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            fontSize = 10.sp,
+        )
+    }
+}
+
+// ── Presence pop-down panel ───────────────────────────────────────────────────
+
+@Composable
+private fun PresencePanel(
+    activeUsers: List<BoardEvent.UserPresence>,
+    onlineCount: Int,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(
+                width = 2.dp,
+                color = MaterialTheme.colorScheme.onBackground,
+                shape = RoundedCornerShape(0.dp)
+            )
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // Header
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            // Pulsing green dot
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .background(Color(0xFF43D39E), CircleShape)
+                    .border(1.5.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
+            )
+            Text(
+                text = "$onlineCount online",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        // User list (max 8 shown to keep panel compact)
+        activeUsers.take(8).forEachIndexed { idx, user ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                UserAvatar(
+                    username = user.username,
+                    color = avatarColors[idx % avatarColors.size],
+                    borderColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+                Text(
+                    text = user.username,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+
+        if (activeUsers.size > 8) {
+            Text(
+                text = "+ ${activeUsers.size - 8} more",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                fontWeight = FontWeight.Medium,
+            )
         }
     }
 }

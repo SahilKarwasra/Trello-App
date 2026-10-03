@@ -1,6 +1,7 @@
 package com.laarasoft.frontend.features.kanban.presentation
 
 import com.laarasoft.frontend.features.kanban.domain.models.Section
+import com.laarasoft.frontend.features.websocket.domain.models.BoardEvent
 
 data class KanbanState(
     val boardId: String = "",
@@ -29,4 +30,6 @@ data class KanbanState(
 
     // Real-time presence
     val onlineCount: Int = 0,
+    val activeUsers: List<BoardEvent.UserPresence> = emptyList(),
+    val showPresencePanel: Boolean = false,
 )

@@ -30,4 +30,5 @@ sealed interface KanbanAction {
     data object OnBackClick : KanbanAction
     data object OnSwitchBoardClick : KanbanAction
     data object OnDismissBoardSwitcher : KanbanAction
+    data object OnTogglePresencePanel : KanbanAction
 }

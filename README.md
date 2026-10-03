@@ -26,7 +26,7 @@ This repository represents a fusion of rigorous manual systems engineering and c
 - **Multiplatform Everywhere:** Run natively on **Android**, **Desktop (macOS, Windows, Linux)**, and **iOS** from a single Kotlin Compose codebase.
 - **Neo-Brutalist Design System:** Distinctive visual style featuring bold black borders (2–2.5dp), hard offset drop shadows, high-contrast surface palettes, and crisp micro-interactions.
 - **Real-Time Collaboration:** Board updates (adding cards, updating titles, moving columns, deleting items) synchronize across all connected users with sub-millisecond WebSocket delivery.
-- **Live User Presence:** Dynamic room presence showing how many users are active on the board, who is currently online, and instant notifications when collaborators join or leave.
+- **Live User Presence:** Dynamic room presence rendered directly in the board's top bar — stacked avatar circles (initials, colour-coded) show who is currently active, an overflow `+N` badge handles large rooms, and tapping the cluster slides open a full user list panel. Presence state updates in real time via `USER_JOINED`, `USER_LEFT`, and `ROOM_STATE` WebSocket events.
 - **Physics-Inspired Drag & Drop:** Custom long-press gesture handling for both **Issue Cards** and entire **Columns/Sections**, complete with boundary detection, smooth auto-scrolling on horizontal board edges, and live card previews.
 - **Organization & Multi-Tenancy:** Multi-tenant workspace model where users create or join organizations, manage boards within organizations, and invite team members.
 - **Rock-Solid Session Management:** Automatic token refreshing, session expiry interception, and safe credential clearing with Jetpack DataStore.
@@ -196,6 +196,36 @@ ws://<host>:8080/api/v1/ws?board_id=<BOARD_UUID>&token=<BEARER_JWT>
 | `ISSUE_UPDATED` | Server ➔ Client | Card details (title, description) were edited |
 | `ISSUE_MOVED` | Server ➔ Client | Card moved within or across sections |
 | `ISSUE_DELETED` | Server ➔ Client | A card was removed from the board |
+
+---
+
+## 👥 Real-Time Presence UI
+
+When one or more collaborators are active on a board, the **Kanban top bar** renders a live presence indicator:
+
+| UI Element | Behaviour |
+|---|---|
+| **Avatar cluster** | Up to 3 colour-coded circles, each showing the user's initials. Stacked with a slight overlap for a compact pill appearance. |
+| **+N overflow badge** | Shown when `onlineCount` exceeds the 3 visible avatars (e.g. `+2` when 5 people are online). |
+| **Expandable panel** | Tapping the cluster toggles a slide-down panel (animated with `AnimatedVisibility`) listing all active users with their avatar and username. |
+| **Live green dot** | A small indicator in the panel header pulses green next to the "N online" label. |
+
+### Presence Data Flow (MVI)
+
+```
+WebSocket Server
+  └─ ROOM_STATE / USER_JOINED / USER_LEFT event
+       └─ RealtimeRepository.observeBoard()
+            └─ KanbanViewModel.handleBoardEvent()
+                 ├─ _state.onlineCount  ← total count from server
+                 ├─ _state.activeUsers  ← full List<BoardEvent.UserPresence>
+                 └─ _state.showPresencePanel ← toggled by OnTogglePresencePanel action
+                      └─ KanbanTopBar → PresenceAvatarCluster + PresencePanel
+```
+
+- **`BoardEvent.RoomState`** — initial snapshot; replaces the entire `activeUsers` list.
+- **`BoardEvent.UserJoined`** — appends the new user (deduplicating by `userId`).
+- **`BoardEvent.UserLeft`** — removes the departing user by `userId`.
 
 ---
 

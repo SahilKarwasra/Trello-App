@@ -141,6 +141,10 @@ class KanbanViewModel(
             is KanbanAction.OnDismissBoardSwitcher -> {
                 _state.update { it.copy(showBoardSwitcher = false) }
             }
+
+            is KanbanAction.OnTogglePresencePanel -> {
+                _state.update { it.copy(showPresencePanel = !it.showPresencePanel) }
+            }
         }
     }
 
@@ -246,15 +250,33 @@ class KanbanViewModel(
             }
 
             is BoardEvent.UserJoined -> {
-                _state.update { it.copy(onlineCount = event.onlineCount) }
+                _state.update { current ->
+                    val updated = current.activeUsers
+                        .filterNot { it.userId == event.userId } +
+                        BoardEvent.UserPresence(event.userId, event.username)
+                    current.copy(
+                        onlineCount = event.onlineCount,
+                        activeUsers = updated,
+                    )
+                }
             }
 
             is BoardEvent.UserLeft -> {
-                _state.update { it.copy(onlineCount = event.onlineCount) }
+                _state.update { current ->
+                    current.copy(
+                        onlineCount = event.onlineCount,
+                        activeUsers = current.activeUsers.filterNot { it.userId == event.userId },
+                    )
+                }
             }
 
             is BoardEvent.RoomState -> {
-                _state.update { it.copy(onlineCount = event.onlineCount) }
+                _state.update { current ->
+                    current.copy(
+                        onlineCount = event.onlineCount,
+                        activeUsers = event.activeUsers,
+                    )
+                }
             }
 
             is BoardEvent.ResyncRequired -> {
