@@ -26,8 +26,9 @@ sealed interface KanbanAction {
         val targetIndex: Int
     ) : KanbanAction
 
-    // Navigation
+    // Navigation & Lifecycle
     data object OnBackClick : KanbanAction
+    data object OnDispose : KanbanAction
     data object OnSwitchBoardClick : KanbanAction
     data object OnDismissBoardSwitcher : KanbanAction
     data object OnTogglePresencePanel : KanbanAction

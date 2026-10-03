@@ -41,14 +41,24 @@ class KanbanViewModel(
     fun onAction(action: KanbanAction) {
         when (action) {
             is KanbanAction.Init -> {
-                if (_state.value.boardId != action.boardId || _state.value.sections.isEmpty()) {
+                val isNewBoard = _state.value.boardId != action.boardId
+                val hasNoSections = _state.value.sections.isEmpty()
+                val isNotObserving = wsJob?.isActive != true
+
+                if (isNewBoard || hasNoSections) {
                     _state.update {
                         it.copy(
                             boardId = action.boardId,
-                            boardTitle = action.boardTitle
+                            boardTitle = action.boardTitle,
+                            sections = if (isNewBoard) emptyList() else it.sections,
+                            onlineCount = 0,
+                            activeUsers = emptyList()
                         )
                     }
                     loadSections(action.boardId)
+                }
+
+                if (isNewBoard || isNotObserving) {
                     observeBoardEvents(action.boardId)
                 }
             }
@@ -129,9 +139,14 @@ class KanbanViewModel(
             }
 
             is KanbanAction.OnBackClick -> {
+                leaveBoard()
                 viewModelScope.launch {
                     _events.send(KanbanEvents.NavigateBack)
                 }
+            }
+
+            is KanbanAction.OnDispose -> {
+                leaveBoard()
             }
 
             is KanbanAction.OnSwitchBoardClick -> {
@@ -501,8 +516,22 @@ class KanbanViewModel(
         }
     }
 
+    private fun leaveBoard() {
+        wsJob?.cancel()
+        wsJob = null
+        realtimeRepository.disconnectAsync()
+        _state.update {
+            it.copy(
+                boardId = "",
+                onlineCount = 0,
+                activeUsers = emptyList(),
+                showPresencePanel = false
+            )
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
-        wsJob?.cancel()
+        leaveBoard()
     }
 }

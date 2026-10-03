@@ -52,6 +52,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -96,6 +97,12 @@ fun KanbanRoot(
     LaunchedEffect(boardId, boardTitle) {
         if (boardId.isNotBlank()) {
             viewModel.onAction(KanbanAction.Init(boardId = boardId, boardTitle = boardTitle))
+        }
+    }
+
+    DisposableEffect(boardId) {
+        onDispose {
+            viewModel.onAction(KanbanAction.OnDispose)
         }
     }
 

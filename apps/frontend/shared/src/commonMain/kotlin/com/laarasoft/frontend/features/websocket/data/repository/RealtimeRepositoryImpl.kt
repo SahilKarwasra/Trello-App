@@ -32,7 +32,7 @@ class RealtimeRepositoryImpl internal constructor(
     private val ws: WebsocketManager,
     private val json: Json,
     private val scope: CoroutineScope,
-    private val idleDisconnectDelay: Duration = 5.seconds,
+    private val idleDisconnectDelay: Duration = Duration.ZERO,
 ) : RealtimeRepository {
 
     private val mapper = BoardEventMapper(json)
@@ -124,10 +124,20 @@ class RealtimeRepositoryImpl internal constructor(
         ws.disconnect()
     }
 
+    override fun disconnectAsync() {
+        idleJob?.cancel()
+        idleJob = null
+        scope.launch {
+            disconnect()
+        }
+    }
+
     private fun scheduleIdleDisconnect() {
         idleJob?.cancel()
         idleJob = scope.launch {
-            delay(idleDisconnectDelay)
+            if (idleDisconnectDelay > Duration.ZERO) {
+                delay(idleDisconnectDelay)
+            }
             mutex.withLock {
                 if (refCounts.isEmpty()) {
                     ws.disconnect()

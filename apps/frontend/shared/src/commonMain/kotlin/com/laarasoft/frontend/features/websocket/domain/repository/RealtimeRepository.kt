@@ -10,4 +10,5 @@ interface RealtimeRepository {
     fun observeBoard(boardId: String): Flow<BoardEvent>
     fun notifyNetworkAvailable()
     suspend fun disconnect()
+    fun disconnectAsync()
 }
