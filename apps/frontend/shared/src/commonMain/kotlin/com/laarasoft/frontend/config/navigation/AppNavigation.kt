@@ -28,10 +28,15 @@ import com.laarasoft.frontend.features.organisation.presentation.CreateOrSelectO
 import com.laarasoft.frontend.features.home.presentation.HomeRoot
 import com.laarasoft.frontend.features.kanban.presentation.KanbanRoot
 import com.laarasoft.frontend.features.splash.presentation.SplashRoot
+import com.laarasoft.frontend.core.utils.SessionManager
+import com.laarasoft.frontend.core.utils.ui.AppDialog
+import org.koin.compose.koinInject
 import kotlinx.coroutines.launch
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    sessionManager: SessionManager = koinInject()
+) {
     val appController: TrelloController = rememberTrelloController()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -63,22 +68,25 @@ fun AppNavigation() {
             }
 
             is UiEvent.SessionExpired -> {
-                dialogEvent = UiEvent.Dialog(
-                    title = "Session Expired",
-                    message = {
-                        Text(text = "Please login again")
-                    },
-                    confirmText = "Ok",
-                    buttonStyle = DialogButtonStyle.Primary,
-                    cancelable = false,
-                    onConfirm = {
-                        appController.navigateToTop(MainGraph.AuthGraph)
-                        dialogEvent = null
-                    },
-                    onDismiss = null
-                )
+                dialogEvent = null
+                fullScreenDialog = null
+                scope.launch {
+                    sessionManager.handleSessionExpired()
+                    appController.navigateToTop(MainGraph.AuthGraph)
+                    snackbarHostState.showSnackbar(
+                        message = "Session expired. Please log in again.",
+                        withDismissAction = true
+                    )
+                }
             }
         }
+    }
+
+    dialogEvent?.let { dialog ->
+        AppDialog(
+            event = dialog,
+            onDismiss = { dialogEvent = null }
+        )
     }
 
     Scaffold(

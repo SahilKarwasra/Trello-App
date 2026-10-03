@@ -7,7 +7,12 @@ import com.laarasoft.frontend.config.network.onSuccess
 import com.laarasoft.frontend.config.network.sendSnackbarOnError
 import com.laarasoft.frontend.core.utils.ui.UiEvent
 import com.laarasoft.frontend.core.utils.ui.UiEventController
+import com.laarasoft.frontend.features.kanban.domain.models.Issue
+import com.laarasoft.frontend.features.kanban.domain.models.Section
 import com.laarasoft.frontend.features.kanban.domain.repository.SectionRepository
+import com.laarasoft.frontend.features.websocket.domain.models.BoardEvent
+import com.laarasoft.frontend.features.websocket.domain.repository.RealtimeRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,7 +22,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class KanbanViewModel(
-    private val sectionRepository: SectionRepository
+    private val sectionRepository: SectionRepository,
+    private val realtimeRepository: RealtimeRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(KanbanState())
@@ -30,6 +36,8 @@ class KanbanViewModel(
     private val _events = Channel<KanbanEvents>(Channel.BUFFERED)
     val events = _events.receiveAsFlow()
 
+    private var wsJob: Job? = null
+
     fun onAction(action: KanbanAction) {
         when (action) {
             is KanbanAction.Init -> {
@@ -41,6 +49,7 @@ class KanbanViewModel(
                         )
                     }
                     loadSections(action.boardId)
+                    observeBoardEvents(action.boardId)
                 }
             }
 
@@ -135,6 +144,127 @@ class KanbanViewModel(
         }
     }
 
+    // ── WebSocket Event Handling ──────────────────────────────────────
+
+    private fun observeBoardEvents(boardId: String) {
+        wsJob?.cancel()
+        wsJob = viewModelScope.launch {
+            realtimeRepository.observeBoard(boardId).collect { event ->
+                handleBoardEvent(event)
+            }
+        }
+    }
+
+    private fun handleBoardEvent(event: BoardEvent) {
+        when (event) {
+            is BoardEvent.SectionCreated -> {
+                _state.update { current ->
+                    val exists = current.sections.any { it.id == event.sectionId }
+                    if (exists) current
+                    else {
+                        val newSection = Section(
+                            id = event.sectionId,
+                            title = event.title,
+                            boardId = event.boardId,
+                            position = event.position,
+                            issues = emptyList()
+                        )
+                        current.copy(
+                            sections = (current.sections + newSection).sortedBy { it.position }
+                        )
+                    }
+                }
+            }
+
+            is BoardEvent.SectionUpdated -> {
+                _state.update { current ->
+                    current.copy(
+                        sections = current.sections.map { sec ->
+                            if (sec.id == event.sectionId) sec.copy(
+                                title = event.title,
+                                position = event.position
+                            ) else sec
+                        }.sortedBy { it.position }
+                    )
+                }
+            }
+
+            is BoardEvent.SectionMoved -> {
+                // Full board refresh to get accurate positions for all sections
+                loadSections(_state.value.boardId, isRefresh = true)
+            }
+
+            is BoardEvent.SectionDeleted -> {
+                _state.update { current ->
+                    current.copy(
+                        sections = current.sections.filterNot { it.id == event.sectionId }
+                    )
+                }
+            }
+
+            is BoardEvent.IssueCreated -> {
+                _state.update { current ->
+                    current.copy(
+                        sections = current.sections.map { sec ->
+                            if (sec.id == event.sectionId) {
+                                val exists = sec.issues.any { it.id == event.issueId }
+                                if (exists) sec
+                                else {
+                                    val newIssue = Issue(
+                                        id = event.issueId,
+                                        title = event.title,
+                                        description = event.description,
+                                        sectionId = event.sectionId,
+                                        createdBy = event.createdBy,
+                                        position = event.position,
+                                    )
+                                    sec.copy(
+                                        issues = (sec.issues + newIssue).sortedBy { it.position }
+                                    )
+                                }
+                            } else sec
+                        }
+                    )
+                }
+            }
+
+            is BoardEvent.IssueMoved -> {
+                // Full board refresh to get accurate positions for all issues
+                loadSections(_state.value.boardId, isRefresh = true)
+            }
+
+            is BoardEvent.IssueDeleted -> {
+                _state.update { current ->
+                    current.copy(
+                        sections = current.sections.map { sec ->
+                            sec.copy(
+                                issues = sec.issues.filterNot { it.id == event.issueId }
+                            )
+                        }
+                    )
+                }
+            }
+
+            is BoardEvent.UserJoined -> {
+                _state.update { it.copy(onlineCount = event.onlineCount) }
+            }
+
+            is BoardEvent.UserLeft -> {
+                _state.update { it.copy(onlineCount = event.onlineCount) }
+            }
+
+            is BoardEvent.RoomState -> {
+                _state.update { it.copy(onlineCount = event.onlineCount) }
+            }
+
+            is BoardEvent.ResyncRequired -> {
+                loadSections(_state.value.boardId, isRefresh = true)
+            }
+        }
+    }
+
+    // ── Optimistic Drag & Drop (with API sync) ──────────────────────
+
     private fun reorderSections(fromIndex: Int, toIndex: Int) {
         val currentSections = _state.value.sections.toMutableList()
         if (fromIndex in currentSections.indices && toIndex in 0..currentSections.size) {
@@ -145,6 +275,17 @@ class KanbanViewModel(
                 sec.copy(position = index + 1)
             }
             _state.update { it.copy(sections = reindexed) }
+
+            // Sync with backend
+            val newPosition = safeIndex + 1
+            viewModelScope.launch {
+                sectionRepository.moveSection(moved.id, newPosition)
+                    .onError {
+                        // Revert on failure by reloading
+                        loadSections(_state.value.boardId, isRefresh = true)
+                    }
+                    .sendSnackbarOnError()
+            }
         }
     }
 
@@ -175,6 +316,16 @@ class KanbanViewModel(
                     if (sec.id == fromSectionId) sec.copy(issues = reindexedIssues) else sec
                 }
                 _state.update { it.copy(sections = newSections) }
+
+                // Sync with backend
+                val newPosition = targetIndex.coerceIn(0, updatedIssues.size - 1) + 1
+                viewModelScope.launch {
+                    sectionRepository.moveIssue(issueId, toSectionId, newPosition)
+                        .onError {
+                            loadSections(_state.value.boardId, isRefresh = true)
+                        }
+                        .sendSnackbarOnError()
+                }
             }
         } else {
             val fromIssues = fromSection.issues
@@ -196,8 +347,20 @@ class KanbanViewModel(
                 }
             }
             _state.update { it.copy(sections = newSections) }
+
+            // Sync with backend
+            val newPosition = safeIndex + 1
+            viewModelScope.launch {
+                sectionRepository.moveIssue(issueId, toSectionId, newPosition)
+                    .onError {
+                        loadSections(_state.value.boardId, isRefresh = true)
+                    }
+                    .sendSnackbarOnError()
+            }
         }
     }
+
+    // ── Create Issue (API call) ─────────────────────────────────────
 
     private fun createIssue() {
         val title = _state.value.newIssueTitle.trim()
@@ -213,34 +376,44 @@ class KanbanViewModel(
 
         val currentSections = _state.value.sections
         val targetSection = currentSections.find { it.id == sectionId } ?: return
-        val newIssue = com.laarasoft.frontend.features.kanban.domain.models.Issue(
-            id = "local-issue-${kotlin.random.Random.nextInt(10000, 99999)}",
-            title = title,
-            description = description,
-            sectionId = sectionId,
-            createdBy = "You",
-            position = targetSection.issues.size + 1
-        )
+        val position = targetSection.issues.size + 1
 
-        val updatedSections = currentSections.map { sec ->
-            if (sec.id == sectionId) {
-                sec.copy(issues = sec.issues + newIssue)
-            } else sec
-        }
-
-        _state.update {
-            it.copy(
-                sections = updatedSections,
-                showCreateIssueDialog = false,
-                newIssueTitle = "",
-                newIssueDescription = "",
-                createIssueSectionId = null
-            )
-        }
         viewModelScope.launch {
-            UiEventController.send(UiEvent.Snackbar("Card \"$title\" added!"))
+            _state.update { it.copy(isCreatingIssue = true) }
+            sectionRepository.createIssue(
+                title = title,
+                description = description,
+                sectionId = sectionId,
+                position = position
+            )
+                .onSuccess { newIssue ->
+                    _state.update { current ->
+                        val updatedSections = current.sections.map { sec ->
+                            if (sec.id == sectionId) {
+                                val exists = sec.issues.any { it.id == newIssue.id }
+                                if (exists) sec
+                                else sec.copy(issues = (sec.issues + newIssue).sortedBy { it.position })
+                            } else sec
+                        }
+                        current.copy(
+                            sections = updatedSections,
+                            showCreateIssueDialog = false,
+                            newIssueTitle = "",
+                            newIssueDescription = "",
+                            createIssueSectionId = null,
+                            isCreatingIssue = false
+                        )
+                    }
+                    UiEventController.send(UiEvent.Snackbar("Card \"$title\" added!"))
+                }
+                .onError {
+                    _state.update { it.copy(isCreatingIssue = false) }
+                }
+                .sendSnackbarOnError()
         }
     }
+
+    // ── Load Sections (API call) ─────────────────────────────────────
 
     private fun loadSections(boardId: String, isRefresh: Boolean = false) {
         viewModelScope.launch {
@@ -250,10 +423,9 @@ class KanbanViewModel(
             sectionRepository.getSections(boardId)
                 .onSuccess { sections ->
                     val sorted = sections.sortedBy { s -> s.position }
-                    val withSampleIssues = seedDefaultIssuesIfEmpty(sorted)
                     _state.update {
                         it.copy(
-                            sections = withSampleIssues,
+                            sections = sorted,
                             isLoadingSections = false,
                             isRefreshing = false
                         )
@@ -272,41 +444,7 @@ class KanbanViewModel(
         }
     }
 
-    private fun seedDefaultIssuesIfEmpty(sections: List<com.laarasoft.frontend.features.kanban.domain.models.Section>): List<com.laarasoft.frontend.features.kanban.domain.models.Section> {
-        val totalIssues = sections.sumOf { it.issues.size }
-        if (totalIssues > 0 || sections.isEmpty()) return sections
-
-        val sampleTemplates = listOf(
-            listOf(
-                "Design Neo-Brutalism system" to "Material theme tokens, high contrast borders & offset shadows",
-                "Setup Android Network Policy" to "Allow cleartext communication for localhost / 10.0.2.2",
-                "Setup Ktor Logging" to "Log all request and response bodies in Android logcat",
-            ),
-            listOf(
-                "Drag & Drop Sections" to "Hold column header to drag and reorder sections horizontally",
-                "Drag & Drop Cards" to "Drag cards across lists and drop at any position seamlessly",
-            ),
-            listOf(
-                "Board switcher navigation" to "Quickly navigate between multiple project workspaces",
-                "API Integration" to "Connect KMP shared repository to Go backend",
-            )
-        )
-
-        return sections.mapIndexed { secIdx, section ->
-            val templates = sampleTemplates.getOrNull(secIdx % sampleTemplates.size) ?: emptyList()
-            val seededIssues = templates.mapIndexed { issIdx, (title, desc) ->
-                com.laarasoft.frontend.features.kanban.domain.models.Issue(
-                    id = "issue-${section.id}-$issIdx",
-                    title = title,
-                    description = desc,
-                    sectionId = section.id,
-                    createdBy = "Admin",
-                    position = issIdx + 1
-                )
-            }
-            section.copy(issues = seededIssues)
-        }
-    }
+    // ── Create Section (API call) ────────────────────────────────────
 
     private fun createSection() {
         val title = _state.value.newSectionTitle.trim()
@@ -339,5 +477,10 @@ class KanbanViewModel(
                 }
                 .sendSnackbarOnError()
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        wsJob?.cancel()
     }
 }

@@ -2,7 +2,6 @@ package com.laarasoft.frontend.features.websocket.data.repository
 
 import com.laarasoft.frontend.features.websocket.data.dto.BoardEventMapper
 import com.laarasoft.frontend.features.websocket.data.dto.WsEnvelope
-import com.laarasoft.frontend.features.websocket.data.dto.WsOutbound
 import com.laarasoft.frontend.features.websocket.data.realtime.WebsocketManager
 import com.laarasoft.frontend.features.websocket.domain.models.BoardEvent
 import com.laarasoft.frontend.features.websocket.domain.realtime.ConnectionState
@@ -50,6 +49,7 @@ class RealtimeRepositoryImpl internal constructor(
     override val connectionState: StateFlow<ConnectionState> = ws.state
 
     init {
+        // On reconnect, emit ResyncRequired for all active boards so the UI can refresh
         scope.launch {
             ws.state.filterIsInstance<ConnectionState.Connected>().collect {
                 val (boards, isReconnect) = mutex.withLock {
@@ -58,7 +58,6 @@ class RealtimeRepositoryImpl internal constructor(
                     hasConnectedBefore = true
                     snapshot to reconnect
                 }
-                boards.forEach { ws.send(WsOutbound.subscribe(json, it)) }
                 if (isReconnect) boards.forEach { resync.tryEmit(BoardEvent.ResyncRequired(it)) }
             }
         }
@@ -90,28 +89,33 @@ class RealtimeRepositoryImpl internal constructor(
         runCatching { mapper.map(json.decodeFromString(WsEnvelope.serializer(), text)) }.getOrNull()
 
     private suspend fun acquire(boardId: String) {
-        val isFirst = mutex.withLock {
+        mutex.withLock {
             idleJob?.cancel()
             idleJob = null
             val count = (refCounts[boardId] ?: 0) + 1
             refCounts[boardId] = count
-            count == 1
         }
         ws.connect()
-        if (isFirst && ws.state.value is ConnectionState.Connected) {
-            ws.send(WsOutbound.subscribe(json, boardId))
-        }
     }
 
     private suspend fun release(boardId: String) = mutex.withLock {
         val count = (refCounts[boardId] ?: return@withLock) - 1
         if (count <= 0) {
             refCounts.remove(boardId)
-            ws.send(WsOutbound.unsubscribe(json, boardId))
         } else {
             refCounts[boardId] = count
         }
         if (refCounts.isEmpty()) scheduleIdleDisconnect()
+    }
+
+    override suspend fun disconnect() {
+        mutex.withLock {
+            idleJob?.cancel()
+            idleJob = null
+            refCounts.clear()
+            hasConnectedBefore = false
+        }
+        ws.disconnect()
     }
 
     private fun scheduleIdleDisconnect() {

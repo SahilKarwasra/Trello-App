@@ -9,4 +9,5 @@ interface RealtimeRepository {
     val connectionState: StateFlow<ConnectionState>
     fun observeBoard(boardId: String): Flow<BoardEvent>
     fun notifyNetworkAvailable()
+    suspend fun disconnect()
 }

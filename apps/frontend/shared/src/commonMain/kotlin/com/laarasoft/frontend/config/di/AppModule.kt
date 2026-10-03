@@ -1,5 +1,6 @@
 package com.laarasoft.frontend.config.di
 
+import com.laarasoft.frontend.core.utils.SessionManager
 import com.laarasoft.frontend.core.utils.TokenProvider
 import com.laarasoft.frontend.config.datastore.DataStoreRepository
 import com.laarasoft.frontend.features.auth.domain.api.AuthApi
@@ -28,6 +29,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngine
 import com.laarasoft.frontend.config.network.platformHttpLogger
+import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
@@ -35,6 +37,8 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.statement.request
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.koin.core.module.Module
@@ -49,9 +53,11 @@ val sharedModules = module {
     includes(platformModule)
     singleOf(::DataStoreRepository)
     singleOf(::TokenProvider)
+    singleOf(::SessionManager)
 
     single<HttpClient> {
         val tokenProvider: TokenProvider = get()
+        val sessionManager: SessionManager = get()
         val json: Json = get()
         val engine = getOrNull<HttpClientEngine>()
         val config: HttpClientConfig<*>.() -> Unit = {
@@ -69,6 +75,17 @@ val sharedModules = module {
                         tokenProvider.getAccessToken()?.let { BearerTokens(it, "") }
                     }
                     sendWithoutRequest { true }
+                }
+            }
+            HttpResponseValidator {
+                validateResponse { response ->
+                    if (response.status == HttpStatusCode.Unauthorized) {
+                        val path = response.request.url.encodedPath
+                        val isAuthRoute = path.contains("/auth/sign-in") || path.contains("/auth/sign-up")
+                        if (!isAuthRoute) {
+                            sessionManager.handleSessionExpired()
+                        }
+                    }
                 }
             }
         }

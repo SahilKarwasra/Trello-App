@@ -30,4 +30,12 @@ class DataStoreRepository (
             }
         }
     }
+
+    suspend fun clearAll() {
+        withContext(Dispatchers.IO) {
+            dataStore.edit { preferences ->
+                preferences.clear()
+            }
+        }
+    }
 }

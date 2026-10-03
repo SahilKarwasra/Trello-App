@@ -6,6 +6,7 @@ import com.laarasoft.frontend.config.navigation.AuthScreenDestination
 import com.laarasoft.frontend.config.network.onError
 import com.laarasoft.frontend.config.network.onSuccess
 import com.laarasoft.frontend.config.network.sendSnackbarOnError
+import com.laarasoft.frontend.core.utils.SessionManager
 import com.laarasoft.frontend.core.utils.ui.UiEvent
 import com.laarasoft.frontend.core.utils.ui.UiEventController
 import com.laarasoft.frontend.features.auth.domain.repository.AuthRepository
@@ -17,7 +18,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class SignupViewModel(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val sessionManager: SessionManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SignupState())
@@ -89,6 +91,7 @@ class SignupViewModel(
             authRepository.signup(username, password)
                 .onSuccess {
                     _state.update { it.copy(isLoading = false) }
+                    sessionManager.resetExpirationState()
                     UiEventController.send(UiEvent.Snackbar("User registered successfully"))
                     _events.send(SignupEvents.NavigateToOrganisations())
                 }.onError { error ->

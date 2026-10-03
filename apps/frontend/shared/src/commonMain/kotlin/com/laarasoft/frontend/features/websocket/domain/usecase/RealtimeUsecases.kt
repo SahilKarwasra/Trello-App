@@ -2,6 +2,7 @@ package com.laarasoft.frontend.features.websocket.domain.usecase
 
 import com.laarasoft.frontend.features.websocket.domain.models.BoardEvent
 import com.laarasoft.frontend.features.websocket.domain.realtime.ConnectionState
+import com.laarasoft.frontend.features.websocket.domain.repository.RealtimeRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 

@@ -48,6 +48,53 @@ data class CreateSectionRequestDto(
     val boardId: String,
     val position: Int
 )
+
+@Serializable
+data class UpdateSectionRequestDto(
+    @SerialName("section_id")
+    val sectionId: String,
+    val title: String
+)
+
+@Serializable
+data class MoveSectionRequestDto(
+    @SerialName("section_id")
+    val sectionId: String,
+    @SerialName("new_position")
+    val newPosition: Int
+)
+
+@Serializable
+data class DeleteSectionRequestDto(
+    @SerialName("section_id")
+    val sectionId: String
+)
+
+@Serializable
+data class CreateIssueRequestDto(
+    val title: String,
+    val description: String = "",
+    @SerialName("section_id")
+    val sectionId: String,
+    val position: Int
+)
+
+@Serializable
+data class MoveIssueRequestDto(
+    @SerialName("issue_id")
+    val issueId: String,
+    @SerialName("new_position")
+    val newPosition: Int,
+    @SerialName("new_section_id")
+    val newSectionId: String
+)
+
+@Serializable
+data class DeleteIssueRequestDto(
+    @SerialName("issue_id")
+    val issueId: String
+)
+
 fun IssueDto.toDomain(): Issue = Issue(
     id = id,
     title = title,
@@ -68,3 +115,4 @@ fun SectionDto.toDomain(): Section = Section(
     createdAt = createdAt,
     updatedAt = updatedAt
 )
+

@@ -16,4 +16,8 @@ object Endpoints {
     val BOARDS: String get() = "$BASE_URL/board"
     val INVITE: String get() = "$BASE_URL/invite"
     val SECTIONS: String get() = "$BASE_URL/section"
+    val ISSUES: String get() = "$BASE_URL/issue"
+    val MOVE_ISSUE: String get() = "$BASE_URL/move-issue"
+    val MOVE_SECTION: String get() = "$BASE_URL/move-section"
+    val WS_URL: String get() = "ws://$host:8080/api/v1/ws"
 }

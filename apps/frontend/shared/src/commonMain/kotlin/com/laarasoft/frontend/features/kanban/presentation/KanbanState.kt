@@ -26,4 +26,7 @@ data class KanbanState(
 
     // Board switcher
     val showBoardSwitcher: Boolean = false,
+
+    // Real-time presence
+    val onlineCount: Int = 0,
 )

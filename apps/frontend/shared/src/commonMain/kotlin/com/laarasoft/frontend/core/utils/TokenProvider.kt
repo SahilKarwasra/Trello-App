@@ -17,6 +17,6 @@ class TokenProvider(
 
     suspend fun clearToken() {
         inMemoryToken = null
-        dataStoreRepository?.clearTokens()
+        dataStoreRepository?.clearAll()
     }
 }

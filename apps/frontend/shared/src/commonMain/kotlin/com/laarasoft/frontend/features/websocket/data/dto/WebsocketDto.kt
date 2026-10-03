@@ -11,35 +11,62 @@ import kotlinx.serialization.json.decodeFromJsonElement
 internal data class WsEnvelope(
     val type: String,
     @SerialName("board_id") val boardId: String? = null,
+    @SerialName("actor_id") val actorId: String? = null,
     val payload: JsonElement? = null,
 )
 
+// Section payloads (matches Go SectionResponse)
 @Serializable
-internal data class CardCreatedDto(
-    @SerialName("list_id") val listId: String,
-    @SerialName("card_id") val cardId: String,
+internal data class SectionPayloadDto(
+    val id: String,
     val title: String,
-    val position: Double,
+    @SerialName("board_id") val boardId: String,
+    val position: Int,
+)
+
+// Issue payloads (matches Go IssueResponse)
+@Serializable
+internal data class IssuePayloadDto(
+    val id: String,
+    val title: String,
+    val description: String = "",
+    @SerialName("section_id") val sectionId: String,
+    @SerialName("created_by") val createdBy: String = "",
+    val position: Int,
+)
+
+// Delete payloads
+@Serializable
+internal data class SectionDeletedPayloadDto(
+    @SerialName("section_id") val sectionId: String,
+    @SerialName("board_id") val boardId: String = "",
 )
 
 @Serializable
-internal data class CardUpdatedDto(
-    @SerialName("card_id") val cardId: String,
-    val title: String? = null,
-    val description: String? = null,
+internal data class IssueDeletedPayloadDto(
+    @SerialName("issue_id") val issueId: String,
+    @SerialName("section_id") val sectionId: String = "",
+    @SerialName("board_id") val boardId: String = "",
+)
+
+// Presence payloads
+@Serializable
+internal data class UserPresencePayloadDto(
+    @SerialName("user_id") val userId: String,
+    val username: String,
+    @SerialName("online_count") val onlineCount: Int,
 )
 
 @Serializable
-internal data class CardMovedDto(
-    @SerialName("card_id") val cardId: String,
-    @SerialName("from_list_id") val fromListId: String,
-    @SerialName("to_list_id") val toListId: String,
-    val position: Double,
+internal data class RoomStatePayloadDto(
+    @SerialName("online_count") val onlineCount: Int,
+    @SerialName("active_users") val activeUsers: List<ActiveUserDto> = emptyList(),
 )
 
 @Serializable
-internal data class CardDeletedDto(
-    @SerialName("card_id") val cardId: String,
+internal data class ActiveUserDto(
+    @SerialName("user_id") val userId: String,
+    val username: String,
 )
 
 internal class BoardEventMapper(private val json: Json) {
@@ -47,27 +74,43 @@ internal class BoardEventMapper(private val json: Json) {
         val boardId = env.boardId ?: return null
         val p = env.payload ?: return null
         return when (env.type) {
-            "card.created" -> json.decodeFromJsonElement<CardCreatedDto>(p).let {
-                BoardEvent.CardCreated(boardId, it.listId, it.cardId, it.title, it.position)
+            "SECTION_CREATED" -> json.decodeFromJsonElement<SectionPayloadDto>(p).let {
+                BoardEvent.SectionCreated(boardId, it.id, it.title, it.position)
             }
-            "card.updated" -> json.decodeFromJsonElement<CardUpdatedDto>(p).let {
-                BoardEvent.CardUpdated(boardId, it.cardId, it.title, it.description)
+            "SECTION_UPDATED" -> json.decodeFromJsonElement<SectionPayloadDto>(p).let {
+                BoardEvent.SectionUpdated(boardId, it.id, it.title, it.position)
             }
-            "card.moved" -> json.decodeFromJsonElement<CardMovedDto>(p).let {
-                BoardEvent.CardMoved(boardId, it.cardId, it.fromListId, it.toListId, it.position)
+            "SECTION_MOVED" -> json.decodeFromJsonElement<SectionPayloadDto>(p).let {
+                BoardEvent.SectionMoved(boardId, it.id, it.title, it.position)
             }
-            "card.deleted" -> json.decodeFromJsonElement<CardDeletedDto>(p).let {
-                BoardEvent.CardDeleted(boardId, it.cardId)
+            "SECTION_DELETED" -> json.decodeFromJsonElement<SectionDeletedPayloadDto>(p).let {
+                BoardEvent.SectionDeleted(boardId, it.sectionId)
+            }
+            "ISSUE_CREATED" -> json.decodeFromJsonElement<IssuePayloadDto>(p).let {
+                BoardEvent.IssueCreated(boardId, it.id, it.title, it.description, it.sectionId, it.createdBy, it.position)
+            }
+            "ISSUE_MOVED" -> json.decodeFromJsonElement<IssuePayloadDto>(p).let {
+                BoardEvent.IssueMoved(boardId, it.id, it.title, it.description, it.sectionId, it.createdBy, it.position)
+            }
+            "ISSUE_DELETED" -> json.decodeFromJsonElement<IssueDeletedPayloadDto>(p).let {
+                BoardEvent.IssueDeleted(boardId, it.issueId, it.sectionId)
+            }
+            "USER_JOINED" -> json.decodeFromJsonElement<UserPresencePayloadDto>(p).let {
+                BoardEvent.UserJoined(boardId, it.userId, it.username, it.onlineCount)
+            }
+            "USER_LEFT" -> json.decodeFromJsonElement<UserPresencePayloadDto>(p).let {
+                BoardEvent.UserLeft(boardId, it.userId, it.username, it.onlineCount)
+            }
+            "ROOM_STATE" -> json.decodeFromJsonElement<RoomStatePayloadDto>(p).let { dto ->
+                BoardEvent.RoomState(
+                    boardId = boardId,
+                    onlineCount = dto.onlineCount,
+                    activeUsers = dto.activeUsers.map {
+                        BoardEvent.UserPresence(it.userId, it.username)
+                    }
+                )
             }
             else -> null
         }
     }
-}
-
-internal object WsOutbound {
-    fun subscribe(json: Json, boardId: String) =
-        json.encodeToString(WsEnvelope.serializer(), WsEnvelope(type = "subscribe", boardId = boardId))
-
-    fun unsubscribe(json: Json, boardId: String) =
-        json.encodeToString(WsEnvelope.serializer(), WsEnvelope(type = "unsubscribe", boardId = boardId))
 }
