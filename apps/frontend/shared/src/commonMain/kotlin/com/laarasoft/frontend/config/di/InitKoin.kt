@@ -10,7 +10,8 @@ fun initKoin(config: KoinAppDeclaration? = null) {
             config?.invoke(this)
             modules(
                 sharedModules,
-                platformModule
+                platformModule,
+                realTimeModule
             )
         }
     } catch (_: KoinApplicationAlreadyStartedException) {

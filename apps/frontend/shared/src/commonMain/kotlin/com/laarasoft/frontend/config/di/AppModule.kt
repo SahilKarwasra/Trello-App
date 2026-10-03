@@ -47,21 +47,16 @@ expect val platformModule: Module
 
 val sharedModules = module {
     includes(platformModule)
-
     singleOf(::DataStoreRepository)
     singleOf(::TokenProvider)
 
     single<HttpClient> {
         val tokenProvider: TokenProvider = get()
+        val json: Json = get()
         val engine = getOrNull<HttpClientEngine>()
         val config: HttpClientConfig<*>.() -> Unit = {
             install(ContentNegotiation) {
-                json(Json {
-                    isLenient = true
-                    ignoreUnknownKeys = true
-                    encodeDefaults = true
-                    explicitNulls = false
-                })
+                json(json)
             }
             install(Logging) {
                 logger = platformHttpLogger
@@ -79,7 +74,14 @@ val sharedModules = module {
         }
         if (engine != null) HttpClient(engine, config) else HttpClient(config)
     }
-
+    single<Json> {
+        Json {
+            isLenient = true
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+            explicitNulls = false
+        }
+    }
     singleOf(::AuthApiImpl).bind<AuthApi>()
     singleOf(::AuthRepositoryImpl).bind<AuthRepository>()
 
