@@ -85,17 +85,23 @@ class RealtimeRepositoryImpl internal constructor(
     override fun notifyNetworkAvailable() = ws.onNetworkAvailable()
 
 
-    private fun decode(text: String): BoardEvent? =
-        runCatching { mapper.map(json.decodeFromString(WsEnvelope.serializer(), text)) }.getOrNull()
+    private fun decode(text: String): BoardEvent? {
+        return try {
+            val env = json.decodeFromString(WsEnvelope.serializer(), text)
+            mapper.map(env)
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     private suspend fun acquire(boardId: String) {
         mutex.withLock {
             idleJob?.cancel()
             idleJob = null
-            val count = (refCounts[boardId] ?: 0) + 1
-            refCounts[boardId] = count
+            val c = (refCounts[boardId] ?: 0) + 1
+            refCounts[boardId] = c
         }
-        ws.connect()
+        ws.connect(boardId)
     }
 
     private suspend fun release(boardId: String) = mutex.withLock {

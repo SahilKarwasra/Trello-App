@@ -9,7 +9,7 @@ import kotlin.time.Duration.Companion.seconds
 interface WebsocketManager {
     val state: StateFlow<ConnectionState>
     val messages: SharedFlow<String>
-    suspend fun connect()
+    suspend fun connect(boardId: String? = null)
     suspend fun disconnect()
 
     // no delivery gurantte in this, use app level acks for that

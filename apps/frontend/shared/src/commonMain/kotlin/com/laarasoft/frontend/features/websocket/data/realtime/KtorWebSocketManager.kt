@@ -10,6 +10,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
+import io.ktor.websocket.readReason
 import io.ktor.websocket.readText
 import io.ktor.websocket.send
 import kotlinx.coroutines.CoroutineScope
@@ -55,8 +56,17 @@ class KtorWebSocketManager(
     private val wakeUp = Channel<Unit>(Channel.CONFLATED)
     private val lifecycleLock = Mutex()
     private var connectionJob: Job? = null
+    private var activeBoardId: String? = null
 
-    override suspend fun connect() = lifecycleLock.withLock {
+    override suspend fun connect(boardId: String?) = lifecycleLock.withLock {
+        if (boardId != null && boardId != activeBoardId) {
+            activeBoardId = boardId
+            connectionJob?.cancelAndJoin()
+            connectionJob = null
+        } else if (boardId != null) {
+            activeBoardId = boardId
+        }
+
         if (connectionJob?.isActive == true) return@withLock
         connectionJob = scope.launch { runLoop() }
     }
@@ -64,12 +74,12 @@ class KtorWebSocketManager(
     override suspend fun disconnect() = lifecycleLock.withLock {
         connectionJob?.cancelAndJoin()
         connectionJob = null
+        activeBoardId = null
         _state.value = ConnectionState.Disconnected
     }
 
     override fun send(text: String): Boolean =
         _state.value is ConnectionState.Connected && outbox.trySend(text).isSuccess
-
 
     override fun onNetworkAvailable() {
         if (_state.value is ConnectionState.Reconnecting) {
@@ -85,7 +95,6 @@ class KtorWebSocketManager(
             var connectedAt: TimeMark? = null
             val terminal: ConnectionState.Failed? = try {
                 val close = runSession { connectedAt = TimeSource.Monotonic.markNow() }
-                log("Session closed: $close", null)
                 if (close?.code == CloseReason.Codes.VIOLATED_POLICY.code) {
                     ConnectionState.Failed(FailureReason.POLICY_VIOLATION)
                 } else null
@@ -93,12 +102,10 @@ class KtorWebSocketManager(
                 throw e
             } catch (e: ResponseException) {
                 val s = e.response.status
-                log("Handshake rejected: $s", e)
                 if (s == HttpStatusCode.Unauthorized || s == HttpStatusCode.Forbidden) {
                     ConnectionState.Failed(FailureReason.UNAUTHORIZED)
                 } else null
             } catch (e: Throwable) {
-                log("Session error", e)
                 null
             }
 
@@ -118,22 +125,54 @@ class KtorWebSocketManager(
 
     private suspend fun runSession(onOpen: () -> Unit): CloseReason? {
         val token = tokenProvider()
-        val session = httpClient.webSocketSession(config.url) {
-            bearerAuth(token)
-        }
-        try {
-            while (outbox.tryReceive().isSuccess) { /* drop stale messages from a previous session */
+        val boardId = activeBoardId
+
+        val fullUrl = buildString {
+            append(config.url)
+            val hasQuery = config.url.contains("?")
+            var first = !hasQuery
+            fun addParam(k: String, v: String) {
+                if (first) {
+                    append("?")
+                    first = false
+                } else {
+                    append("&")
+                }
+                append(k).append("=").append(v)
             }
+            if (!boardId.isNullOrBlank()) {
+                addParam("board_id", boardId)
+            }
+            if (token.isNotBlank()) {
+                addParam("token", token)
+            }
+        }
+
+        val session = httpClient.webSocketSession(fullUrl) {
+            if (token.isNotBlank()) {
+                bearerAuth(token)
+            }
+        }
+
+        try {
+            while (outbox.tryReceive().isSuccess) { /* drop stale messages */ }
             _state.value = ConnectionState.Connected
             onOpen()
 
             coroutineScope {
                 val writer = launch {
-                    for (text in outbox) session.send(text)
+                    for (text in outbox) {
+                        session.send(text)
+                    }
                 }
                 try {
                     for (frame in session.incoming) {
-                        if (frame is Frame.Text) _messages.tryEmit(frame.readText())
+                        if (frame is Frame.Text) {
+                            val text = frame.readText()
+                            text.lines().filter { it.isNotBlank() }.forEach { line ->
+                                _messages.tryEmit(line)
+                            }
+                        }
                     }
                 } finally {
                     writer.cancel()

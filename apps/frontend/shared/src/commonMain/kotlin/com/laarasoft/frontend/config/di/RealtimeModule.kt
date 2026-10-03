@@ -1,5 +1,6 @@
 package com.laarasoft.frontend.config.di
 
+import com.laarasoft.frontend.config.network.Endpoints
 import com.laarasoft.frontend.core.utils.SessionManager
 import com.laarasoft.frontend.core.utils.TokenProvider
 import com.laarasoft.frontend.features.websocket.data.realtime.KtorWebSocketManager
@@ -24,7 +25,7 @@ val realTimeModule = module {
     }
     single {
         WebSocketConfig(
-            url = "ws://localhost:8081/ws"
+            url = Endpoints.WS_URL
         )
     }
 
