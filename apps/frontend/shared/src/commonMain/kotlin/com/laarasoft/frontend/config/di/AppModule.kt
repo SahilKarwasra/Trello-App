@@ -15,10 +15,10 @@ import com.laarasoft.frontend.features.organisation.data.api.OrganisationApiImpl
 import com.laarasoft.frontend.features.organisation.data.repository.OrganisationRepositoryImpl
 import com.laarasoft.frontend.features.organisation.domain.api.OrganisationApi
 import com.laarasoft.frontend.features.organisation.domain.repository.OrganisationRepository
-import com.laarasoft.frontend.features.board.data.api.BoardApiImpl
-import com.laarasoft.frontend.features.board.data.repository.BoardRepositoryImpl
-import com.laarasoft.frontend.features.board.domain.api.BoardApi
-import com.laarasoft.frontend.features.board.domain.repository.BoardRepository
+import com.laarasoft.frontend.features.home.data.api.BoardApiImpl
+import com.laarasoft.frontend.features.home.data.repository.BoardRepositoryImpl
+import com.laarasoft.frontend.features.home.domain.api.BoardApi
+import com.laarasoft.frontend.features.home.domain.repository.BoardRepository
 import com.laarasoft.frontend.features.kanban.data.api.SectionApiImpl
 import com.laarasoft.frontend.features.kanban.data.repository.SectionRepositoryImpl
 import com.laarasoft.frontend.features.kanban.domain.api.SectionApi

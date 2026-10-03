@@ -7,7 +7,7 @@ import com.laarasoft.frontend.config.network.onSuccess
 import com.laarasoft.frontend.config.network.sendSnackbarOnError
 import com.laarasoft.frontend.core.utils.ui.UiEvent
 import com.laarasoft.frontend.core.utils.ui.UiEventController
-import com.laarasoft.frontend.features.board.domain.repository.BoardRepository
+import com.laarasoft.frontend.features.home.domain.repository.BoardRepository
 import com.laarasoft.frontend.features.organisation.domain.repository.OrganisationRepository
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow

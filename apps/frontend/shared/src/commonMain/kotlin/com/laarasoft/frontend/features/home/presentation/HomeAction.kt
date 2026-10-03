@@ -1,6 +1,6 @@
 package com.laarasoft.frontend.features.home.presentation
 
-import com.laarasoft.frontend.features.board.domain.model.Board
+import com.laarasoft.frontend.features.home.domain.model.Board
 
 sealed interface HomeAction {
     data class Init(val orgId: String, val orgName: String) : HomeAction

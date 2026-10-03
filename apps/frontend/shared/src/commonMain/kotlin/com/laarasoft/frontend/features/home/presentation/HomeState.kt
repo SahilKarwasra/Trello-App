@@ -1,6 +1,6 @@
 package com.laarasoft.frontend.features.home.presentation
 
-import com.laarasoft.frontend.features.board.domain.model.Board
+import com.laarasoft.frontend.features.home.domain.model.Board
 
 data class HomeState(
     val orgId: String = "",
